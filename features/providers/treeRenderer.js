@@ -1,8 +1,7 @@
 // File: features/providers/treeRenderer.js
 const vscode = require('vscode');
-const DevFlowItem = require('../models/DevFlowItem'); // Model yahan bulaya hai
+const DevFlowItem = require('../models/DevFlowItem');
 
-// 🔥 Helper: Dynamic Tag Formatter
 const formatTag = (context, taskText) => {
     const globalTags = context.globalState.get('itemTags', {});
     const rawTag = globalTags[taskText];
@@ -10,7 +9,6 @@ const formatTag = (context, taskText) => {
     return (rawTag.toLowerCase().includes("bug") && !rawTag.includes("🔴")) ? `[🔴 ${rawTag}]` : `[${rawTag}]`;
 };
 
-// 📂 UI Section 1: Main Folders
 const getRoots = (context) => {
     const roots = [
         new DevFlowItem("General Workspace", "comment-discussion", vscode.TreeItemCollapsibleState.Expanded, "standardTab", false),
@@ -48,7 +46,6 @@ const getRoots = (context) => {
     return roots;
 };
 
-// 📋 UI Section 2: Standard Tasks & Comments
 const getStandardItems = (context, folderName) => {
     const trashData = context.globalState.get('trashData', []);
     const priorityTasks = context.globalState.get('priorityTasks', []);
@@ -99,7 +96,6 @@ const getStandardItems = (context, folderName) => {
     return items;
 };
 
-// ⭐ UI Section 3: Priority Items
 const getPriorityItems = (context) => {
     const priorityTasks = context.globalState.get('priorityTasks', []);
     return priorityTasks.map(t => {
@@ -111,11 +107,13 @@ const getPriorityItems = (context) => {
     });
 };
 
-// 🗑️ UI Section 4: Recycle Bin
+// 🔥 FIX 3: Tags ab Recycle Bin mein bhi dikhenge!
 const getRecycleItems = (context) => {
     const trashData = context.globalState.get('trashData', []);
     return trashData.map(t => {
-        const it = new DevFlowItem(t.text, "history", vscode.TreeItemCollapsibleState.None, "recycleTask", false, t.text);
+        const tagStr = formatTag(context, t.text);
+        const displayLabel = tagStr ? `${tagStr} ${t.text}` : t.text;
+        const it = new DevFlowItem(displayLabel, "history", vscode.TreeItemCollapsibleState.None, "recycleTask", false, t.text);
         it.description = t.description || `(from: ${t.deletedFrom})`;
         return it;
     });

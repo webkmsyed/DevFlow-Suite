@@ -7,8 +7,12 @@ function registerTrashCommands(context, todoProvider) {
     register('jargon.taskDelTemp', async (node) => {
         if (!node) return;
         let trash = context.globalState.get('trashData', []);
+        let pri = context.globalState.get('priorityTasks', []);
+        
         const isScanned = node.description && node.description.includes('Line');
-        const newItem = { id: Date.now(), text: node.originalText, description: node.description, isScanned: isScanned, deletedFrom: node.parentLabel || "General Workspace", originalLine: null, originalFile: null };
+        const wasPriority = pri.some(t => t.text === node.originalText); // Yaad rakhega!
+
+        const newItem = { id: Date.now(), text: node.originalText, description: node.description, isScanned: isScanned, deletedFrom: node.parentLabel || "General Workspace", originalLine: null, originalFile: null, isPriority: wasPriority };
 
         if (isScanned) {
             const comments = context.globalState.get('fileComments', []);
@@ -30,7 +34,6 @@ function registerTrashCommands(context, todoProvider) {
             await context.globalState.update('manualTasks', tasks);
         }
         
-        let pri = context.globalState.get('priorityTasks', []);
         pri = pri.filter(t => t.text !== node.originalText);
         await context.globalState.update('priorityTasks', pri);
 
@@ -46,6 +49,8 @@ function registerTrashCommands(context, todoProvider) {
 
         if (itemIndex > -1) {
             const item = trash[itemIndex];
+            
+            // 1. Physical Restore (If Scanned)
             if (item.isScanned && item.originalFile && vscode.workspace.workspaceFolders) {
                 const fileUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, item.originalFile);
                 try {
@@ -56,10 +61,22 @@ function registerTrashCommands(context, todoProvider) {
                     await doc.save();
                 } catch (err) {}
             } else if (!item.isScanned) {
+                // If not scanned, just add back to manual tasks
                 let tasks = context.globalState.get('manualTasks', []);
                 tasks.push({ id: item.id, text: item.text, folder: item.deletedFrom });
                 await context.globalState.update('manualTasks', tasks);
             }
+
+            // 2. State Restore (Put back in Priority if it was priority)
+            if (item.isPriority) {
+                let pri = context.globalState.get('priorityTasks', []);
+                // Ensure no duplicates
+                if (!pri.some(p => p.text === item.text)) {
+                    pri.push({ text: item.text, isScanned: item.isScanned });
+                    await context.globalState.update('priorityTasks', pri);
+                }
+            }
+
             trash.splice(itemIndex, 1);
             await context.globalState.update('trashData', trash);
             todoProvider.refresh();
@@ -77,6 +94,7 @@ function registerTrashCommands(context, todoProvider) {
     register('jargon.recDeleteAll', async () => {
         await context.globalState.update('trashData', []);
         todoProvider.refresh();
+        vscode.window.showInformationMessage("Recycle bin emptied.");
     });
 }
 
