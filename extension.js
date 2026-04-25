@@ -13,7 +13,7 @@ function activate(context) {
         const { registerPriorityCommands } = require('./features/commands/priorityOps');
         const { registerTrashCommands } = require('./features/commands/trashOps');
         const { registerWorkspaceCommands } = require('./features/commands/workspaceOps');
-        
+
         const { registerSearch } = require('./features/main/searchOps');
         const { registerFilter } = require('./features/main/filterOps');
         const { registerSort } = require('./features/main/sortOps');
@@ -33,7 +33,7 @@ function activate(context) {
         registerPriorityCommands(context, todoProvider);
         registerTrashCommands(context, todoProvider);
         registerWorkspaceCommands(context, todoProvider);
-        
+
         // 🔥 Injecting Main Header Operations
         registerSearch(context, todoProvider);
         registerFilter(context, todoProvider);
@@ -45,8 +45,8 @@ function activate(context) {
         // ==========================================
         const register = (cmd, handler) => context.subscriptions.push(vscode.commands.registerCommand(cmd, handler));
         const dummy = [
-            'jargon.tabExport', 'jargon.tabFilter', 'jargon.tabSort', 
-            'jargon.priExport', 'jargon.priAddAll', 
+            'jargon.tabExport', 'jargon.tabFilter', 'jargon.tabSort',
+            'jargon.priExport', 'jargon.priAddAll',
             'jargon.recExport', 'jargon.recSearch', 'jargon.taskAddTo'
         ];
         dummy.forEach(cmd => register(cmd, () => vscode.window.showInformationMessage(`DevFlow-Suite: Logic pending for this button!`)));
@@ -56,8 +56,21 @@ function activate(context) {
         vscode.window.showErrorMessage(`DevFlow-Suite Crash: ${error.message}`);
         console.error("Activation Error:", error);
     }
+    // Command to open file at specific line
+    register('jargon.openFile', async (file, line) => {
+        const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        if (!rootPath) return;
+        const fileUri = vscode.Uri.file(require('path').join(rootPath, file));
+        const doc = await vscode.workspace.openTextDocument(fileUri);
+        const editor = await vscode.window.showTextDocument(doc);
+
+        // Line par cursor le jane ke liye
+        const pos = new vscode.Position(line - 1, 0);
+        editor.selection = new vscode.Selection(pos, pos);
+        editor.revealRange(new vscode.Range(pos, pos));
+    });
 }
 
-function deactivate() {}
+function deactivate() { }
 
 module.exports = { activate, deactivate };

@@ -3,17 +3,19 @@ const vscode = require('vscode');
 
 function registerExport(context) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.mainExport', async () => {
+        const format = await vscode.window.showQuickPick(['Markdown (.md)', 'CSV (.csv)'], { placeHolder: 'Select Export Format' });
+        if (!format) return;
+
         const tasks = context.globalState.get('manualTasks', []);
-        const pri = context.globalState.get('priorityTasks', []);
-        
-        let md = `# DevFlow-Suite Export\n\n## ⭐ Priority\n`;
-        // @ts-ignore
-        pri.forEach(p => md += `- [ ] ${p.text}\n`);
-        md += `\n## 📋 Tasks\n`;
-        // @ts-ignore
-        tasks.forEach(t => md += `- [ ] ${t.text} (Folder: ${t.folder})\n`);
-        
-        const doc = await vscode.workspace.openTextDocument({ content: md, language: 'markdown' });
+        let content = "";
+
+        if (format.includes('Markdown')) {
+            content = `# DevFlow-Suite Export\n\n` + tasks.map(t => `- [ ] ${t.text} (${t.folder})`).join('\n');
+        } else {
+            content = `Task,Folder\n` + tasks.map(t => `"${t.text}","${t.folder}"`).join('\n');
+        }
+
+        const doc = await vscode.workspace.openTextDocument({ content, language: format.includes('Markdown') ? 'markdown' : 'plaintext' });
         await vscode.window.showTextDocument(doc);
     }));
 }
