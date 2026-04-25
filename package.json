@@ -9,8 +9,11 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
-  "main": "./extension.js",
+  "activationEvents": [
+   "onView:todo-explorer",
+   "*" 
+],
+  "main": "./extension.js", 
   "contributes": {
   "viewsContainers": {
     "activitybar": [
