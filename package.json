@@ -1,0 +1,59 @@
+{
+  "name": "devflow-suite",
+  "displayName": "DevFlow-Suite",
+  "description": "A minimalist, backendless VS Code extension for streamlined TODO management and instant Git visualization. Boost productivity with zero-config task tracking and native Git graphs.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.116.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+  "viewsContainers": {
+    "activitybar": [
+      {
+        "id": "devflow-suite-sidebar",
+        "title": "DevFlow Suite",
+        "icon": "$(rocket)"
+      }
+    ]
+  },
+  "views": {
+    "devflow-suite-sidebar": [
+      {
+        "id": "todo-explorer",
+        "name": "Smart TODOs",
+        "visibility": "visible"
+      },
+      {
+        "id": "git-visualizer",
+        "name": "Git Tree Explorer",
+        "visibility": "visible"
+      }
+    ]
+  },
+  "commands": [
+    {
+      "command": "devflow-suite.refreshTodo",
+      "title": "Refresh TODOs",
+      "icon": "$(refresh)"
+    }
+  ]
+},
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.116.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "eslint": "^9.39.3",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
