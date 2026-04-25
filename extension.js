@@ -26,6 +26,7 @@ function activate(context) {
         vscode.window.registerTreeDataProvider('todo-explorer', todoProvider);
 
         const scanWorkspaceForComments = initScanner(context, todoProvider);
+        const { registerHistoryCommands } = require('./features/commands/historyOps');
 
         // 🧩 Injecting Operations
         registerFolderCommands(context, todoProvider, scanWorkspaceForComments);
@@ -39,6 +40,7 @@ function activate(context) {
         registerFilter(context, todoProvider);
         registerSort(context, todoProvider);
         registerExport(context);
+        registerHistoryCommands(context, todoProvider);
 
         // ==========================================
         // 🟡 PENDING BUTTONS

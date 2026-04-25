@@ -1,5 +1,6 @@
 // File: features/commands/taskOps.js
 const vscode = require('vscode');
+const { recordHistory } = require('./historyOps'); // 📸 History Engine Import Kiya!
 
 function registerTaskCommands(context, todoProvider) {
     const register = (cmd, handler) => context.subscriptions.push(vscode.commands.registerCommand(cmd, handler));
@@ -8,6 +9,8 @@ function registerTaskCommands(context, todoProvider) {
         if (!node) return; 
         const taskText = await vscode.window.showInputBox({ prompt: `Add task to [${node.originalText}]` });
         if (taskText) {
+            recordHistory(context); // 🔥 SNAPSHOT TAKEN BEFORE CHANGE!
+
             let tasks = context.globalState.get('manualTasks', []);
             tasks.push({ id: Date.now(), text: taskText, folder: node.originalText });
             await context.globalState.update('manualTasks', tasks);
@@ -15,26 +18,19 @@ function registerTaskCommands(context, todoProvider) {
         }
     });
 
-    // 🔥 SAFE TAGGING LOGIC
     register('jargon.taskTag', async (node) => {
         if (!node) return;
         const tag = await vscode.window.showInputBox({ 
             prompt: `Tag for "${node.originalText}"`,
-            placeHolder: "Type tag (e.g., bug) OR type 'clear' to remove existing tag" 
+            placeHolder: "Type tag (e.g., bug) OR type 'clear' to remove" 
         });
         
         if (tag !== undefined) {
+            recordHistory(context); // 🔥 SNAPSHOT TAKEN BEFORE CHANGE!
+
             let tagsDict = context.globalState.get('itemTags', {});
-            
-            if (tag.trim().toLowerCase() === "clear") {
-                // Sirf tab delete hoga jab user 'clear' likhega
-                delete tagsDict[node.originalText]; 
-                vscode.window.showInformationMessage("Tag removed!");
-            } else if (tag.trim() !== "") {
-                // Naya tag save hoga
-                tagsDict[node.originalText] = tag.trim(); 
-            }
-            // Agar khali input dekar enter kiya, toh kuch nahi hoga (Safe!)
+            if (tag.trim().toLowerCase() === "clear") delete tagsDict[node.originalText]; 
+            else if (tag.trim() !== "") tagsDict[node.originalText] = tag.trim(); 
             
             await context.globalState.update('itemTags', tagsDict);
             todoProvider.refresh();

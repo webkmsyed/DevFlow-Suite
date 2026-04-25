@@ -1,16 +1,19 @@
 // File: features/commands/trashOps.js
 const vscode = require('vscode');
+const { recordHistory } = require('./historyOps'); // 📸 History Engine Bulaya
 
 function registerTrashCommands(context, todoProvider) {
     const register = (cmd, handler) => context.subscriptions.push(vscode.commands.registerCommand(cmd, handler));
 
     register('jargon.taskDelTemp', async (node) => {
         if (!node) return;
+        recordHistory(context); // 🔥 Delete hone se pehle yaad rakho!
+
         let trash = context.globalState.get('trashData', []);
         let pri = context.globalState.get('priorityTasks', []);
         
         const isScanned = node.description && node.description.includes('Line');
-        const wasPriority = pri.some(t => t.text === node.originalText); // Yaad rakhega!
+        const wasPriority = pri.some(t => t.text === node.originalText); 
 
         const newItem = { id: Date.now(), text: node.originalText, description: node.description, isScanned: isScanned, deletedFrom: node.parentLabel || "General Workspace", originalLine: null, originalFile: null, isPriority: wasPriority };
 
@@ -44,13 +47,14 @@ function registerTrashCommands(context, todoProvider) {
 
     register('jargon.taskRestore', async (node) => {
         if (!node) return;
+        recordHistory(context); // 🔥 Restore hone se pehle yaad rakho!
+
         let trash = context.globalState.get('trashData', []);
         const itemIndex = trash.findIndex(t => t.text === node.originalText);
 
         if (itemIndex > -1) {
             const item = trash[itemIndex];
             
-            // 1. Physical Restore (If Scanned)
             if (item.isScanned && item.originalFile && vscode.workspace.workspaceFolders) {
                 const fileUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, item.originalFile);
                 try {
@@ -61,16 +65,13 @@ function registerTrashCommands(context, todoProvider) {
                     await doc.save();
                 } catch (err) {}
             } else if (!item.isScanned) {
-                // If not scanned, just add back to manual tasks
                 let tasks = context.globalState.get('manualTasks', []);
                 tasks.push({ id: item.id, text: item.text, folder: item.deletedFrom });
                 await context.globalState.update('manualTasks', tasks);
             }
 
-            // 2. State Restore (Put back in Priority if it was priority)
             if (item.isPriority) {
                 let pri = context.globalState.get('priorityTasks', []);
-                // Ensure no duplicates
                 if (!pri.some(p => p.text === item.text)) {
                     pri.push({ text: item.text, isScanned: item.isScanned });
                     await context.globalState.update('priorityTasks', pri);
@@ -85,6 +86,7 @@ function registerTrashCommands(context, todoProvider) {
 
     register('jargon.taskDelPerm', async (node) => {
         if (!node) return;
+        recordHistory(context); // 🔥 Parmanent delete se pehle yaad rakho!
         let trash = context.globalState.get('trashData', []);
         trash = trash.filter(t => t.text !== node.originalText);
         await context.globalState.update('trashData', trash);
@@ -92,6 +94,7 @@ function registerTrashCommands(context, todoProvider) {
     });
 
     register('jargon.recDeleteAll', async () => {
+        recordHistory(context); // 🔥 Kachra khali karne se pehle yaad rakho!
         await context.globalState.update('trashData', []);
         todoProvider.refresh();
         vscode.window.showInformationMessage("Recycle bin emptied.");
