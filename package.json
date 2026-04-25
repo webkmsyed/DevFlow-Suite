@@ -1,34 +1,337 @@
 {
   "name": "devflow-suite",
-  "displayName": "DevFlow-Suite",
-  "description": "A minimalist, backendless VS Code extension for TODO management and Git visualization.",
-  "version": "0.0.1",
+  "displayName": "jargoniseasy DevFlow-Suite",
+  "description": "Enterprise Workspace Manager for jargoniseasy.com",
+  "version": "1.0.0",
+  "publisher": "webkmsyed",
   "engines": {
-    "vscode": "^1.116.0"
+    "vscode": "^1.75.0"
   },
   "main": "./extension.js",
-  "activationEvents": [],
-  "contributes": {
-  "views": {
-    "devflow-suite-sidebar": [
-      { "id": "todo-explorer", "name": "DevFlow Workspace" }
-    ]
-  },
-  "commands": [
-    { "command": "devflow-suite.addManualTodo", "title": "Add Personal Task", "icon": "$(add)" },
-    { "command": "devflow-suite.exportTasks", "title": "Export to Markdown", "icon": "$(export)" },
-    { "command": "devflow-suite.deleteTask", "title": "Move to Trash", "icon": "$(trash)" },
-    { "command": "devflow-suite.copyTask", "title": "Copy Task", "icon": "$(copy)" }
+  "activationEvents": [
+    "onView:todo-explorer"
   ],
-  "menus": {
-    "view/item/context": [
-      { "command": "devflow-suite.copyTask", "when": "view == todo-explorer", "group": "inline" },
-      { "command": "devflow-suite.deleteTask", "when": "view == todo-explorer && viewItem == manualTodo", "group": "inline" }
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "jargon-devflow",
+          "title": "jargoniseasy DevFlow",
+          "icon": "$(rocket)"
+        }
+      ]
+    },
+    "views": {
+      "jargon-devflow": [
+        {
+          "id": "todo-explorer",
+          "name": "DevFlow Workspace",
+          "dragAndDropController": true
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "jargon.mainFolder",
+        "title": "Create Folder",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "jargon.mainExport",
+        "title": "Export Dropdown",
+        "icon": "$(export)"
+      },
+      {
+        "command": "jargon.mainRefresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "jargon.mainDelete",
+        "title": "Delete All",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "jargon.mainFilter",
+        "title": "Filter",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "jargon.mainSearch",
+        "title": "Search",
+        "icon": "$(search)"
+      },
+      {
+        "command": "jargon.mainSort",
+        "title": "Drag & Sort",
+        "icon": "$(sort-precedence)"
+      },
+      {
+        "command": "jargon.tabTask",
+        "title": "Create Task",
+        "icon": "$(add)"
+      },
+      {
+        "command": "jargon.tabFlag",
+        "title": "Flag Options",
+        "icon": "$(bookmark)"
+      },
+      {
+        "command": "jargon.tabExport",
+        "title": "Export Tab",
+        "icon": "$(export)"
+      },
+      {
+        "command": "jargon.tabDelete",
+        "title": "Delete Tab",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "jargon.tabFilter",
+        "title": "Filter Tab",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "jargon.tabSort",
+        "title": "Sort Tab",
+        "icon": "$(sort-precedence)"
+      },
+      {
+        "command": "jargon.priRemoveAll",
+        "title": "Remove All",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "jargon.priExport",
+        "title": "Export Priority",
+        "icon": "$(export)"
+      },
+      {
+        "command": "jargon.priAddAll",
+        "title": "Add All To",
+        "icon": "$(move)"
+      },
+      {
+        "command": "jargon.recRestoreAll",
+        "title": "Restore All",
+        "icon": "$(history)"
+      },
+      {
+        "command": "jargon.recExport",
+        "title": "Export Recycle",
+        "icon": "$(export)"
+      },
+      {
+        "command": "jargon.recSearch",
+        "title": "Search Recycle",
+        "icon": "$(search)"
+      },
+      {
+        "command": "jargon.recDeleteAll",
+        "title": "Delete All Permanent",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "jargon.taskCopy",
+        "title": "Copy Task",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "jargon.taskFlag",
+        "title": "Flag Task",
+        "icon": "$(bookmark)"
+      },
+      {
+        "command": "jargon.taskAddTo",
+        "title": "Add To...",
+        "icon": "$(replace)"
+      },
+      {
+        "command": "jargon.taskDelTemp",
+        "title": "Move to Recycle",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "jargon.taskRemovePri",
+        "title": "Remove Priority",
+        "icon": "$(star-empty)"
+      },
+      {
+        "command": "jargon.taskRestore",
+        "title": "Restore Task",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "jargon.taskDelPerm",
+        "title": "Delete Permanent",
+        "icon": "$(close)"
+      }
     ],
-    "view/title": [
-      { "command": "devflow-suite.addManualTodo", "when": "view == todo-explorer", "group": "navigation" },
-      { "command": "devflow-suite.exportTasks", "when": "view == todo-explorer", "group": "navigation" }
-    ]
+    "menus": {
+      "view/title": [
+        {
+          "command": "jargon.mainFolder",
+          "when": "view == todo-explorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "jargon.mainExport",
+          "when": "view == todo-explorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "jargon.mainRefresh",
+          "when": "view == todo-explorer",
+          "group": "navigation@3"
+        },
+        {
+          "command": "jargon.mainDelete",
+          "when": "view == todo-explorer",
+          "group": "navigation@4"
+        },
+        {
+          "command": "jargon.mainFilter",
+          "when": "view == todo-explorer",
+          "group": "navigation@5"
+        },
+        {
+          "command": "jargon.mainSearch",
+          "when": "view == todo-explorer",
+          "group": "navigation@6"
+        },
+        {
+          "command": "jargon.mainSort",
+          "when": "view == todo-explorer",
+          "group": "navigation@7"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "jargon.tabTask",
+          "when": "view == todo-explorer && viewItem == standardTab",
+          "group": "inline@1"
+        },
+        {
+          "command": "jargon.tabFlag",
+          "when": "view == todo-explorer && viewItem == standardTab",
+          "group": "inline@2"
+        },
+        {
+          "command": "jargon.tabExport",
+          "when": "view == todo-explorer && viewItem == standardTab",
+          "group": "inline@3"
+        },
+        {
+          "command": "jargon.tabDelete",
+          "when": "view == todo-explorer && viewItem == standardTab",
+          "group": "inline@4"
+        },
+        {
+          "command": "jargon.tabFilter",
+          "when": "view == todo-explorer && viewItem == standardTab",
+          "group": "inline@5"
+        },
+        {
+          "command": "jargon.tabSort",
+          "when": "view == todo-explorer && viewItem == standardTab",
+          "group": "inline@6"
+        },
+        {
+          "command": "jargon.priRemoveAll",
+          "when": "view == todo-explorer && viewItem == priorityTab",
+          "group": "inline@1"
+        },
+        {
+          "command": "jargon.priExport",
+          "when": "view == todo-explorer && viewItem == priorityTab",
+          "group": "inline@2"
+        },
+        {
+          "command": "jargon.priAddAll",
+          "when": "view == todo-explorer && viewItem == priorityTab",
+          "group": "inline@3"
+        },
+        {
+          "command": "jargon.recRestoreAll",
+          "when": "view == todo-explorer && viewItem == recycleTab",
+          "group": "inline@1"
+        },
+        {
+          "command": "jargon.recExport",
+          "when": "view == todo-explorer && viewItem == recycleTab",
+          "group": "inline@2"
+        },
+        {
+          "command": "jargon.recSearch",
+          "when": "view == todo-explorer && viewItem == recycleTab",
+          "group": "inline@3"
+        },
+        {
+          "command": "jargon.recDeleteAll",
+          "when": "view == todo-explorer && viewItem == recycleTab",
+          "group": "inline@4"
+        },
+        {
+          "command": "jargon.taskCopy",
+          "when": "view == todo-explorer && viewItem == standardTask",
+          "group": "inline@1"
+        },
+        {
+          "command": "jargon.taskFlag",
+          "when": "view == todo-explorer && viewItem == standardTask",
+          "group": "inline@2"
+        },
+        {
+          "command": "jargon.taskAddTo",
+          "when": "view == todo-explorer && viewItem == standardTask",
+          "group": "inline@3"
+        },
+        {
+          "command": "jargon.taskDelTemp",
+          "when": "view == todo-explorer && viewItem == standardTask",
+          "group": "inline@4"
+        },
+        {
+          "command": "jargon.taskCopy",
+          "when": "view == todo-explorer && viewItem == priorityTask",
+          "group": "inline@1"
+        },
+        {
+          "command": "jargon.taskFlag",
+          "when": "view == todo-explorer && viewItem == priorityTask",
+          "group": "inline@2"
+        },
+        {
+          "command": "jargon.taskAddTo",
+          "when": "view == todo-explorer && viewItem == priorityTask",
+          "group": "inline@3"
+        },
+        {
+          "command": "jargon.taskRemovePri",
+          "when": "view == todo-explorer && viewItem == priorityTask",
+          "group": "inline@4"
+        },
+        {
+          "command": "jargon.taskRestore",
+          "when": "view == todo-explorer && viewItem == recycleTask",
+          "group": "inline@1"
+        },
+        {
+          "command": "jargon.taskDelPerm",
+          "when": "view == todo-explorer && viewItem == recycleTask",
+          "group": "inline@2"
+        },
+        {
+          "command": "jargon.taskCopy",
+          "when": "view == todo-explorer && viewItem == recycleTask",
+          "group": "inline@3"
+        },
+        {
+          "command": "jargon.taskFlag",
+          "when": "view == todo-explorer && viewItem == recycleTask",
+          "group": "inline@4"
+        }
+      ]
+    }
   }
-}
 }
