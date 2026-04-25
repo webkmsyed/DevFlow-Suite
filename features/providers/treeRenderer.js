@@ -9,12 +9,9 @@ const formatTag = (context, taskText) => {
     return (rawTag.toLowerCase().includes("bug") && !rawTag.includes("🔴")) ? `[🔴 ${rawTag}]` : `[${rawTag}]`;
 };
 
+// File: features/providers/treeRenderer.js (Update ONLY getRoots function)
+
 const getRoots = (context) => {
-    const roots = [
-        new DevFlowItem("General Workspace", "comment-discussion", vscode.TreeItemCollapsibleState.Expanded, "standardTab", false),
-        new DevFlowItem("Priority Items", "star-full", vscode.TreeItemCollapsibleState.Expanded, "priorityTab", false)
-    ];
-    
     const userFolders = context.globalState.get('userFolders', []);
     const manualTasks = context.globalState.get('manualTasks', []);
     const fileComments = context.globalState.get('fileComments', []);
@@ -25,6 +22,9 @@ const getRoots = (context) => {
     const isInTrash = (text) => trashData.some(t => t.text === text);
     const isInPriority = (text) => priorityTasks.some(t => t.text === text);
 
+    // ==========================================
+    // 1. DYNAMIC USER FOLDERS (Top of the list)
+    // ==========================================
     let folderItems = userFolders.map(f => {
         const manualCount = manualTasks.filter(t => t.folder === f && !isInTrash(t.text) && !isInPriority(t.text)).length;
         const scannedCount = fileComments.filter(c => c.target === f && !isInTrash(c.text) && !isInPriority(c.text)).length;
@@ -36,15 +36,26 @@ const getRoots = (context) => {
         return item;
     });
 
+    // 🔥 SORTING: Sirf User Folders par apply hoga!
     if (sortOrder === 'Folder Size (High to Low)') folderItems.sort((a, b) => b.taskCount - a.taskCount);
     else if (sortOrder === 'Folder Size (Low to High)') folderItems.sort((a, b) => a.taskCount - b.taskCount);
     else if (sortOrder === 'A-Z (Alphabetical)') folderItems.sort((a, b) => a.label.localeCompare(b.label));
     else if (sortOrder === 'Z-A (Reverse Alphabetical)') folderItems.sort((a, b) => b.label.localeCompare(a.label));
 
-    roots.push(...folderItems);
-    roots.push(new DevFlowItem("Recycle Bin", "trash", vscode.TreeItemCollapsibleState.Collapsed, "recycleTab", false));
-    return roots;
+
+    // ==========================================
+    // 2. SYSTEM TABS (Pinned at the bottom)
+    // ==========================================
+    const systemTabs = [
+        new DevFlowItem("General Workspace", "comment-discussion", vscode.TreeItemCollapsibleState.Expanded, "standardTab", false),
+        new DevFlowItem("Priority Items", "star-full", vscode.TreeItemCollapsibleState.Expanded, "priorityTab", false),
+        new DevFlowItem("Recycle Bin", "trash", vscode.TreeItemCollapsibleState.Collapsed, "recycleTab", false)
+    ];
+
+    // 🔥 COMBINE: User Folders upar, System Tabs sabse niche!
+    return [...folderItems, ...systemTabs];
 };
+
 
 // File: features/providers/treeRenderer.js (Update ONLY getStandardItems function)
 
@@ -53,7 +64,7 @@ const getStandardItems = (context, folderName) => {
     const priorityTasks = context.globalState.get('priorityTasks', []);
     const fileComments = context.globalState.get('fileComments', []);
     const manualTasks = context.globalState.get('manualTasks', []);
-    
+
     const searchQuery = context.globalState.get('searchQuery', '');
     const activeFilter = context.globalState.get('activeFilter', 'All Items');
     const activeTagFilter = context.globalState.get('activeTagFilter', ''); // 🔥 Get new state
@@ -74,7 +85,7 @@ const getStandardItems = (context, folderName) => {
         filteredScanned = filteredScanned.filter(c => formatTag(context, c.text) === "");
         filteredManual = filteredManual.filter(t => formatTag(context, t.text) === "");
     }
-    
+
     // 🔥 NEW: Apply Custom Tag Filter
     if (activeFilter === 'Specific Tag' && activeTagFilter) {
         const getRawTag = (txt) => {
@@ -95,12 +106,12 @@ const getStandardItems = (context, folderName) => {
         const tagStr = formatTag(context, t.text);
         items.push(new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "edit", vscode.TreeItemCollapsibleState.None, "standardTask", true, t.text));
     });
-    
+
     filteredScanned.forEach(c => {
         const tagStr = formatTag(context, c.text);
         const it = new DevFlowItem(tagStr ? `${tagStr} ${c.text}` : c.text, "go-to-file", vscode.TreeItemCollapsibleState.None, "standardTask", false, c.text);
         it.description = `${c.file} (Line ${c.line})`;
-        it.parentLabel = folderName; 
+        it.parentLabel = folderName;
         it.command = { command: 'jargon.openFile', title: 'Open File', arguments: [c.file, c.line] };
         items.push(it);
     });
@@ -116,7 +127,7 @@ const getPriorityItems = (context) => {
     return priorityTasks.map(t => {
         const tagStr = formatTag(context, t.text);
         const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "star", vscode.TreeItemCollapsibleState.None, "priorityTask", true, t.text);
-        it.iconPath = new vscode.ThemeIcon('star', new vscode.ThemeColor('charts.orange')); 
+        it.iconPath = new vscode.ThemeIcon('star', new vscode.ThemeColor('charts.orange'));
         it.description = t.isScanned ? "(Scanned)" : "(Manual)";
         return it;
     });
