@@ -1,16 +1,13 @@
 {
   "name": "devflow-suite",
   "displayName": "DevFlow-Suite",
-  "description": "A minimalist, backendless VS Code extension for streamlined TODO management and instant Git visualization. Boost productivity with zero-config task tracking and native Git graphs.",
+  "description": "A minimalist, backendless VS Code extension for TODO management and Git visualization.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.116.0"
   },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [],
   "main": "./extension.js",
+  "activationEvents": [],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -45,6 +42,11 @@
         "command": "devflow-suite.addManualTodo",
         "title": "Add Global Task",
         "icon": "$(add)"
+      },
+      {
+        "command": "devflow-suite.exportTasks",
+        "title": "Share Tasks to Notion",
+        "icon": "$(export)"
       }
     ],
     "menus": {
@@ -53,21 +55,18 @@
           "command": "devflow-suite.addManualTodo",
           "when": "view == todo-explorer",
           "group": "navigation"
+        },
+        {
+          "command": "devflow-suite.exportTasks",
+          "when": "view == todo-explorer",
+          "group": "navigation"
+        },
+        {
+          "command": "devflow-suite.refreshTodo",
+          "when": "view == todo-explorer",
+          "group": "navigation"
         }
       ]
     }
-  },
-  "scripts": {
-    "lint": "eslint .",
-    "pretest": "npm run lint",
-    "test": "vscode-test"
-  },
-  "devDependencies": {
-    "@types/vscode": "^1.116.0",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
-    "eslint": "^9.39.3",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2"
   }
 }
