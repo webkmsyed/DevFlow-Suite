@@ -30,3 +30,23 @@ module.exports = {
     deactivate
 }
 // TODO: Bhai ye UI check karni hai
+
+// extension.js ke activate function ke andar ye dalo:
+let addManualTodo = vscode.commands.registerCommand('devflow-suite.addManualTodo', async () => {
+    const task = await vscode.window.showInputBox({
+        placeHolder: "Bhai, kya yaad rakhna hai? (e.g. Fix Navbar)",
+        prompt: "Add a manual task to DevFlow Suite"
+    });
+
+    if (task) {
+        // VS Code ki internal storage mein save karo
+        let manualTodos = context.globalState.get('manualTodos', []);
+        manualTodos.push({ text: task, done: false });
+        await context.globalState.update('manualTodos', manualTodos);
+        
+        TodoProvider.refresh(); // Sidebar ko update karo
+        vscode.window.showInformationMessage('Task Saved, Bhai!');
+    }
+});
+
+context.subscriptions.push(addManualTodo);
