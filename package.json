@@ -67,6 +67,16 @@
         "icon": "$(sort-precedence)"
       },
       {
+        "command": "jargon.mainUndo",
+        "title": "Undo Last Action",
+        "icon": "$(reply)"
+      },
+      {
+        "command": "jargon.mainRedo",
+        "title": "Redo Action",
+        "icon": "$(share)"
+      },
+      {
         "command": "jargon.tabTask",
         "title": "Create Task",
         "icon": "$(add)"
@@ -213,6 +223,16 @@
           "command": "jargon.mainSort",
           "when": "view == todo-explorer",
           "group": "navigation@7"
+        },
+        {
+          "command": "jargon.mainUndo",
+          "when": "view == todo-explorer",
+          "group": "navigation@8"
+        },
+        {
+          "command": "jargon.mainRedo",
+          "when": "view == todo-explorer",
+          "group": "navigation@9"
         }
       ],
       "view/item/context": [
