@@ -1,13 +1,11 @@
 {
-	"compilerOptions": {
-		"module": "Node16",
-		"target": "ES2022",
-		"checkJs": true,  /* Typecheck .js files. */
-		"lib": [
-			"ES2022"
-		]
-	},
-	"exclude": [
-		"node_modules"
-	]
+    "compilerOptions": {
+        "module": "NodeNext",
+        "target": "ES2022",
+        "checkJs": true,           
+        "moduleResolution": "NodeNext",
+        "resolveJsonModule": true,
+        "lib": ["ES2022"]
+    },
+    "exclude": ["node_modules", "dist"]
 }
