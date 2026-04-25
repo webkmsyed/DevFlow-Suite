@@ -49,18 +49,15 @@ function registerExport(context) {
             return res;
         };
 
-        // 🔥 Data Collector: Combines Scanned & Manual for each Tab
         const getItemsForTab = (tab) => {
             if (tab === "Priority Items") {
                 return priorityTasks.filter(p => !isInTrash(p.text)).map(p => ({ ...p, source: p.isScanned ? 'Scanned' : 'User Created' }));
             }
             let items = [];
-            // Get Manual Tasks
             if (activeFilter !== 'Scanned Comments Only') {
                 const mt = manualTasks.filter(t => t.folder === tab && !isInTrash(t.text) && !isInPriority(t.text)).map(t => ({ ...t, source: 'User Created' }));
                 items.push(...mt);
             }
-            // Get Scanned Comments
             if (activeFilter !== 'Manual Tasks Only') {
                 const sc = fileComments.filter(c => c.target === tab && !isInTrash(c.text) && !isInPriority(c.text)).map(c => ({ ...c, source: `Scanned (${c.file})` }));
                 items.push(...sc);
@@ -69,15 +66,16 @@ function registerExport(context) {
         };
 
         let output = "";
+        let languageId = "plaintext"; // 🔥 Fixed Error: Type assignment variable
         const allTabs = ["General Workspace", "Priority Items", ...userFolders];
 
         // ================= CSV LOGIC =================
         if (formatChoice.includes('CSV')) {
-            output = `\ufeff`; // UTF-8 BOM for Excel
+            languageId = "plaintext"; // Explicitly set
+            output = `\ufeff`; 
             allTabs.forEach(tab => {
                 let items = applyFilters(getItemsForTab(tab));
                 if (items.length > 0 || !isCurrentOnly) {
-                    // Create a separate Box/Section for each Tab
                     output += `\n"--- ${tab.toUpperCase()} ---"\n`;
                     output += `"No.","Tag","Task","Source"\n`;
                     items.forEach((i, idx) => {
@@ -89,6 +87,7 @@ function registerExport(context) {
         } 
         // ================= TXT LOGIC =================
         else if (formatChoice.includes('Text')) {
+            languageId = "plaintext"; // Explicitly set
             output = `DEVFLOW-SUITE WORKSPACE REPORT\n${'='.repeat(30)}\n\n`;
             allTabs.forEach(tab => {
                 let items = applyFilters(getItemsForTab(tab));
@@ -104,6 +103,7 @@ function registerExport(context) {
         } 
         // ================= MARKDOWN LOGIC =================
         else {
+            languageId = "markdown"; // Explicitly set
             output = `# DevFlow-Suite Export (${isCurrentOnly ? 'Filtered' : 'Full'})\n\n`;
             allTabs.forEach(tab => {
                 let items = applyFilters(getItemsForTab(tab));
@@ -115,8 +115,8 @@ function registerExport(context) {
             });
         }
 
-        const langMap = { 'Markdown': 'markdown', 'CSV': 'plaintext', 'Text': 'plaintext' };
-        const doc = await vscode.workspace.openTextDocument({ content: output, language: langMap[formatChoice.split(' ')[0]] });
+        // 🔥 langMap index error bypassed safely!
+        const doc = await vscode.workspace.openTextDocument({ content: output, language: languageId });
         await vscode.window.showTextDocument(doc);
     }));
 }
