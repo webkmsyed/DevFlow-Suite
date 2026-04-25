@@ -3,58 +3,108 @@ const vscode = require('vscode');
 
 function registerExport(context) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.mainExport', async () => {
-        const format = await vscode.window.showQuickPick(['Markdown (.md)', 'CSV (.csv)'], { placeHolder: 'Select Export Format' });
-        if (!format) return;
+        // 1. Choose Scope: Current Settings or All
+        const scope = await vscode.window.showQuickPick([
+            { label: 'Export with Current Settings', detail: 'Respects active search, filters, and sorting' },
+            { label: 'Export All Data', detail: 'Ignore filters and export everything folder-wise' }
+        ], { placeHolder: 'Select Export Scope' });
 
-        // Saare data sources fetch kiye
+        if (!scope) return;
+        const isCurrentOnly = scope.label.includes('Current Settings');
+
+        // 2. Choose Format
+        const formatChoice = await vscode.window.showQuickPick([
+            'Markdown (.md)', 
+            'CSV (.csv) - Excel Ready', 
+            'Text (.txt) - Notepad'
+        ], { placeHolder: 'Select Export Format' });
+
+        if (!formatChoice) return;
+
+        // --- Data Gathering & Filtering ---
+        const userFolders = context.globalState.get('userFolders', []);
         const manualTasks = context.globalState.get('manualTasks', []);
         const fileComments = context.globalState.get('fileComments', []);
         const priorityTasks = context.globalState.get('priorityTasks', []);
         const globalTags = context.globalState.get('itemTags', {});
+        
+        const searchQuery = isCurrentOnly ? context.globalState.get('searchQuery', '') : '';
+        const activeFilter = isCurrentOnly ? context.globalState.get('activeFilter', 'All Items') : 'All Items';
+        const sortOrder = isCurrentOnly ? context.globalState.get('sortOrder', 'Default') : 'Default';
 
-        // Tag Formatting Helper
+        // Helpers
         const getTag = (txt) => {
             const t = globalTags[txt];
-            if(!t) return "";
-            return (t.toLowerCase().includes("bug") && !t.includes("🔴")) ? `[🔴 ${t}]` : `[${t}]`;
+            if (!t) return "";
+            return (t.toLowerCase().includes("bug")) ? `[🔴 ${t}]` : `[${t}]`;
         };
 
-        let content = "";
+        const applyFilters = (list) => {
+            let res = [...list];
+            if (searchQuery) res = res.filter(item => (item.text || "").toLowerCase().includes(searchQuery));
+            if (activeFilter === 'Bugs Only (🔴)') res = res.filter(item => getTag(item.text).includes('🔴'));
+            if (sortOrder === 'A-Z (Alphabetical)') res.sort((a, b) => (a.text || "").localeCompare(b.text || ""));
+            return res;
+        };
 
-        if (format.includes('Markdown')) {
-            content = `# DevFlow-Suite Export\n\n`;
-            
-            content += `## ⭐ Priority Items\n`;
-            if(priorityTasks.length === 0) content += `*No priority items*\n`;
-            priorityTasks.forEach(p => content += `- [ ] ${getTag(p.text)} **${p.text}**\n`);
+        // --- Content Generation ---
+        let output = "";
+        const allTabs = ["General Workspace", "Priority Items", ...userFolders];
 
-            content += `\n## 📋 Manual Tasks\n`;
-            if(manualTasks.length === 0) content += `*No manual tasks*\n`;
-            manualTasks.forEach(t => content += `- [ ] ${getTag(t.text)} **${t.text}** *(Folder: ${t.folder})*\n`);
-
-            content += `\n## 🔍 Auto-Scanned Comments\n`;
-            if(fileComments.length === 0) content += `*No scanned comments*\n`;
-            fileComments.forEach(c => content += `- [ ] ${getTag(c.text)} **${c.text}** *(File: ${c.file} - Line: ${c.line})*\n`);
-            
-        } else {
-            // Excel-ready Bulletproof CSV
-            content = `Type,Task,Tag,Folder/Location\n`;
-            const escapeCSV = (str) => `"${String(str).replace(/"/g, '""')}"`;
-
-            priorityTasks.forEach(p => {
-                content += `Priority,${escapeCSV(p.text)},${escapeCSV(getTag(p.text))},General Workspace\n`;
+        if (formatChoice.includes('Markdown')) {
+            output = `# DevFlow-Suite Export (${isCurrentOnly ? 'Filtered' : 'Full'})\n\n`;
+            allTabs.forEach(tab => {
+                let items = (tab === "Priority Items") ? priorityTasks : 
+                            (tab === "General Workspace") ? fileComments.filter(c => c.target === "General Workspace") :
+                            manualTasks.filter(t => t.folder === tab);
+                
+                items = applyFilters(items);
+                if (items.length > 0 || !isCurrentOnly) {
+                    output += `## ${tab}\n`;
+                    items.forEach(i => output += `- [ ] ${getTag(i.text)} ${i.text} ${i.file ? `*(${i.file})*` : ''}\n`);
+                    output += `\n`;
+                }
             });
-            manualTasks.forEach(t => {
-                content += `Manual Task,${escapeCSV(t.text)},${escapeCSV(getTag(t.text))},${escapeCSV(t.folder)}\n`;
+        } 
+        else if (formatChoice.includes('CSV')) {
+            // \ufeff adds BOM for Excel to recognize UTF-8 correctly
+            output = `\ufeffSection,Tag,Task,Location\n`;
+            allTabs.forEach(tab => {
+                let items = (tab === "Priority Items") ? priorityTasks : 
+                            (tab === "General Workspace") ? fileComments.filter(c => c.target === "General Workspace") :
+                            manualTasks.filter(t => t.folder === tab);
+                items = applyFilters(items);
+                items.forEach(i => {
+                    const esc = (s) => `"${String(s || "").replace(/"/g, '""')}"`;
+                    output += `${esc(tab)},${esc(getTag(i.text))},${esc(i.text)},${esc(i.file || 'Manual')}\n`;
+                });
             });
-            fileComments.forEach(c => {
-                content += `Scanned Comment,${escapeCSV(c.text)},${escapeCSV(getTag(c.text))},${escapeCSV(c.file + " (Line " + c.line + ")")}\n`;
+        } 
+        else { // TXT Format
+            output = `DEVFLOW-SUITE WORKSPACE REPORT\n${'='.repeat(30)}\n\n`;
+            allTabs.forEach(tab => {
+                let items = (tab === "Priority Items") ? priorityTasks : 
+                            (tab === "General Workspace") ? fileComments.filter(c => c.target === "General Workspace") :
+                            manualTasks.filter(t => t.folder === tab);
+                items = applyFilters(items);
+                if (items.length > 0 || !isCurrentOnly) {
+                    output += `[ ${tab.toUpperCase()} ]\n`;
+                    items.forEach((i, idx) => {
+                        const tag = getTag(i.text);
+                        output += `${idx + 1}. ${tag ? tag + ' ' : ''}${i.text}\n`;
+                    });
+                    output += `\n`;
+                }
             });
         }
 
-        // Generate File
-        const doc = await vscode.workspace.openTextDocument({ content, language: format.includes('Markdown') ? 'markdown' : 'plaintext' });
+        const langMap = { 'Markdown': 'markdown', 'CSV': 'plaintext', 'Text': 'plaintext' };
+        const doc = await vscode.workspace.openTextDocument({ 
+            content: output, 
+            language: langMap[formatChoice.split(' ')[0]] 
+        });
         await vscode.window.showTextDocument(doc);
     }));
 }
+
 module.exports = { registerExport };
