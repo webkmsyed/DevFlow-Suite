@@ -1,60 +1,49 @@
 const vscode = require('vscode');
 const TodoProvider = require('./features/todoProvider');
 
-/**
- * @param {vscode.ExtensionContext} context
- */
 function activate(context) {
-    console.log('DevFlow Suite is now active!');
-
-    const rootPath = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
-        ? vscode.workspace.workspaceFolders[0].uri.fsPath
-        : undefined;
-
-    // Corrected: Passing both rootPath and context
+    const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     const todoProvider = new TodoProvider(rootPath, context);
     vscode.window.registerTreeDataProvider('todo-explorer', todoProvider);
 
-    // 1. Refresh Command
-    let refreshCommand = vscode.commands.registerCommand('devflow-suite.refreshTodo', () => {
-        todoProvider.refresh();
-        vscode.window.showInformationMessage('DevFlow: List Refreshed!');
-    });
-
-    // 2. Add Manual Task
-    let addManualTodo = vscode.commands.registerCommand('devflow-suite.addManualTodo', async () => {
+    // Command: Add Personal Task
+    let addTodo = vscode.commands.registerCommand('devflow-suite.addManualTodo', async () => {
         const task = await vscode.window.showInputBox({
-            placeHolder: "Bhai, kya yaad rakhna hai? (e.g. Fix Navbar UI)",
-            prompt: "Add a personal task (Not in code)"
+            placeHolder: "e.g., Finalize UI Design",
+            prompt: "Enter a new personal task"
         });
-
         if (task) {
-            let manualTodos = context.globalState.get('manualTodos', []);
-            manualTodos.push({ text: task, done: false });
-            await context.globalState.update('manualTodos', manualTodos);
+            let manual = context.globalState.get('manualTodos', []);
+            manual.push({ id: Date.now(), text: task });
+            await context.globalState.update('manualTodos', manual);
             todoProvider.refresh();
-            vscode.window.showInformationMessage('Task Saved, Bhai!');
+            vscode.window.showInformationMessage('Task added successfully.');
         }
     });
 
-    // 3. Export to Notion (Markdown)
-    let exportTasks = vscode.commands.registerCommand('devflow-suite.exportTasks', async () => {
-        const manual = context.globalState.get('manualTodos', []);
-        if (manual.length === 0) {
-            vscode.window.showWarningMessage("Bhai, pehle koi manual task toh dalo!");
-            return;
+    // Command: Delete Task (Move to Trash)
+    let deleteTodo = vscode.commands.registerCommand('devflow-suite.deleteTask', async (item) => {
+        let manual = context.globalState.get('manualTodos', []);
+        let trash = context.globalState.get('trashTodos', []);
+        
+        const taskToDelete = manual.find(t => t.text === item.label);
+        if (taskToDelete) {
+            trash.push(taskToDelete);
+            manual = manual.filter(t => t.id !== taskToDelete.id);
+            await context.globalState.update('manualTodos', manual);
+            await context.globalState.update('trashTodos', trash);
+            todoProvider.refresh();
+            vscode.window.showInformationMessage('Task moved to Trash.');
         }
-
-        let markdownText = "# 🚀 DevFlow Suite - Personal Tasks\n\n";
-        manual.forEach(t => markdownText += `- [ ] ${t.text}\n`);
-
-        await vscode.env.clipboard.writeText(markdownText);
-        vscode.window.showInformationMessage("Markdown copied! Ab Notion par paste kardo. 😎");
     });
 
-    context.subscriptions.push(refreshCommand, addManualTodo, exportTasks);
+    // Command: Copy to Clipboard
+    let copyTask = vscode.commands.registerCommand('devflow-suite.copyTask', async (item) => {
+        await vscode.env.clipboard.writeText(item.label);
+        vscode.window.showInformationMessage('Copied to clipboard.');
+    });
+
+    context.subscriptions.push(addTodo, deleteTodo, copyTask);
 }
 
-function deactivate() {}
-
-module.exports = { activate, deactivate };
+exports.activate = activate;

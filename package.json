@@ -9,64 +9,26 @@
   "main": "./extension.js",
   "activationEvents": [],
   "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "devflow-suite-sidebar",
-          "title": "DevFlow Suite",
-          "icon": "$(rocket)"
-        }
-      ]
-    },
-    "views": {
-      "devflow-suite-sidebar": [
-        {
-          "id": "todo-explorer",
-          "name": "Smart TODOs",
-          "visibility": "visible"
-        },
-        {
-          "id": "git-visualizer",
-          "name": "Git Tree Explorer",
-          "visibility": "visible"
-        }
-      ]
-    },
-    "commands": [
-      {
-        "command": "devflow-suite.refreshTodo",
-        "title": "Refresh TODOs",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "devflow-suite.addManualTodo",
-        "title": "Add Global Task",
-        "icon": "$(add)"
-      },
-      {
-        "command": "devflow-suite.exportTasks",
-        "title": "Share Tasks to Notion",
-        "icon": "$(export)"
-      }
+  "views": {
+    "devflow-suite-sidebar": [
+      { "id": "todo-explorer", "name": "DevFlow Workspace" }
+    ]
+  },
+  "commands": [
+    { "command": "devflow-suite.addManualTodo", "title": "Add Personal Task", "icon": "$(add)" },
+    { "command": "devflow-suite.exportTasks", "title": "Export to Markdown", "icon": "$(export)" },
+    { "command": "devflow-suite.deleteTask", "title": "Move to Trash", "icon": "$(trash)" },
+    { "command": "devflow-suite.copyTask", "title": "Copy Task", "icon": "$(copy)" }
+  ],
+  "menus": {
+    "view/item/context": [
+      { "command": "devflow-suite.copyTask", "when": "view == todo-explorer", "group": "inline" },
+      { "command": "devflow-suite.deleteTask", "when": "view == todo-explorer && viewItem == manualTodo", "group": "inline" }
     ],
-    "menus": {
-      "view/title": [
-        {
-          "command": "devflow-suite.addManualTodo",
-          "when": "view == todo-explorer",
-          "group": "navigation"
-        },
-        {
-          "command": "devflow-suite.exportTasks",
-          "when": "view == todo-explorer",
-          "group": "navigation"
-        },
-        {
-          "command": "devflow-suite.refreshTodo",
-          "when": "view == todo-explorer",
-          "group": "navigation"
-        }
-      ]
-    }
+    "view/title": [
+      { "command": "devflow-suite.addManualTodo", "when": "view == todo-explorer", "group": "navigation" },
+      { "command": "devflow-suite.exportTasks", "when": "view == todo-explorer", "group": "navigation" }
+    ]
   }
+}
 }

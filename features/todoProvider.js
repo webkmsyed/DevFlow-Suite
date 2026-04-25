@@ -16,49 +16,60 @@ class TodoProvider {
     async getChildren(element) {
         if (!element) {
             return [
-                new CategoryItem("Project Tasks", "folder", vscode.TreeItemCollapsibleState.Expanded),
-                new CategoryItem("Personal Tasks", "pin", vscode.TreeItemCollapsibleState.Expanded)
+                new CategoryItem("Personal Tasks", "pin", vscode.TreeItemCollapsibleState.Expanded),
+                new CategoryItem("Code Comments", "code", vscode.TreeItemCollapsibleState.Collapsed),
+                new CategoryItem("Trash", "trash", vscode.TreeItemCollapsibleState.Collapsed)
             ];
-        }
-
-        if (element.label === "Project Tasks") {
-            return await this.scanForTodos();
         }
 
         if (element.label === "Personal Tasks") {
             const manual = this.context.globalState.get('manualTodos', []);
-            return manual.map(task => {
-                const item = new vscode.TreeItem(task.text, vscode.TreeItemCollapsibleState.None);
-                item.iconPath = new vscode.ThemeIcon('star-full');
-                item.description = "Global";
+            return manual.map(t => {
+                const item = new vscode.TreeItem(t.text, vscode.TreeItemCollapsibleState.None);
+                item.contextValue = 'manualTodo';
+                item.iconPath = new vscode.ThemeIcon('circle-outline');
                 return item;
             });
         }
+
+        if (element.label === "Trash") {
+            const trash = this.context.globalState.get('trashTodos', []);
+            return trash.map(t => new vscode.TreeItem(t.text, vscode.TreeItemCollapsibleState.None));
+        }
+
+        if (element.label === "Code Comments") {
+            return await this.scanFoldersForComments();
+        }
+
         return [];
     }
 
-    async scanForTodos() {
-        const todoList = [];
+    async scanFoldersForComments() {
         if (!this.workspaceRoot) return [];
-        
-        const files = await vscode.workspace.findFiles('**/*.{js,ts,py,html,css}', '**/node_modules/**');
+        const items = [];
+        const files = await vscode.workspace.findFiles('**/*.{js,ts,css}', '**/node_modules/**');
+
         for (const file of files) {
             const content = fs.readFileSync(file.fsPath, 'utf8');
-            content.split('\n').forEach((line, index) => {
-                if (/\/\/\s*TODO:/.test(line)) {
-                    const item = new vscode.TreeItem(line.replace(/\/\/\s*TODO:/, '').trim());
-                    item.description = path.basename(file.fsPath);
-                    item.iconPath = new vscode.ThemeIcon('check');
-                    item.command = {
-                        command: 'vscode.open',
-                        arguments: [file, { selection: new vscode.Range(index, 0, index, 0) }],
-                        title: 'Open File'
-                    };
-                    todoList.push(item);
+            const lines = content.split('\n');
+            lines.forEach((line, index) => {
+                // Matches // TODO: or just general // comments
+                if (/\/\//.test(line)) {
+                    const cleanText = line.split('//')[1].trim();
+                    if (cleanText) {
+                        const item = new vscode.TreeItem(cleanText);
+                        item.description = path.basename(file.fsPath);
+                        item.command = {
+                            command: 'vscode.open',
+                            arguments: [file, { selection: new vscode.Range(index, 0, index, 0) }],
+                            title: 'Open'
+                        };
+                        items.push(item);
+                    }
                 }
             });
         }
-        return todoList;
+        return items;
     }
 }
 
