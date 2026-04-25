@@ -1,6 +1,6 @@
 // File: features/todoProvider.js
 const vscode = require('vscode');
-const DevFlowItem = require('./models/DevFlowItem'); // 📦 Ensure this file exists in models folder!
+const DevFlowItem = require('./models/DevFlowItem');
 
 class TodoProvider {
     constructor(workspaceRoot, context) {
@@ -13,7 +13,6 @@ class TodoProvider {
     refresh() { this._onDidChangeTreeData.fire(); }
     getTreeItem(element) { return element; }
 
-    // 🧩 Master Router for UI Elements
     async getChildren(element) {
         if (!element) return this._getRoots();
         if (element.contextValue === "standardTab" || element.label === "General Workspace") return this._getStandardItems(element);
@@ -22,7 +21,6 @@ class TodoProvider {
         return [];
     }
 
-    // 🔥 Helper: Dynamic Tag Formatter
     _formatTag(taskText) {
         const globalTags = this.context.globalState.get('itemTags', {});
         const rawTag = globalTags[taskText];
@@ -31,7 +29,6 @@ class TodoProvider {
         return `[${rawTag}]`;
     }
 
-    // 📂 UI Section 1: Main Folders
     _getRoots() {
         const roots = [
             new DevFlowItem("General Workspace", "comment-discussion", vscode.TreeItemCollapsibleState.Expanded, "standardTab", false),
@@ -40,7 +37,7 @@ class TodoProvider {
         
         const userFolders = this.context.globalState.get('userFolders', []);
         const manualTasks = this.context.globalState.get('manualTasks', []);
-        const sortOrder = this.context.globalState.get('sortOrder', 'Default');
+        const sortOrder = this.context.globalState.get('sortOrder', 'Default (Time Added)');
 
         let folderItems = userFolders.map(f => {
             const taskCount = manualTasks.filter(t => t.folder === f).length;
@@ -50,9 +47,15 @@ class TodoProvider {
             return item;
         });
 
-        // 🔀 Folder Sorting (Task Count High-Low)
-        if (sortOrder === 'Task Count (High to Low)') {
+        // 🔥 TABS & FOLDERS GLOBAL SORTING FIX
+        if (sortOrder === 'Folder Size (High to Low)') {
             folderItems.sort((a, b) => b.taskCount - a.taskCount);
+        } else if (sortOrder === 'Folder Size (Low to High)') {
+            folderItems.sort((a, b) => a.taskCount - b.taskCount);
+        } else if (sortOrder === 'A-Z (Alphabetical)') {
+            folderItems.sort((a, b) => a.label.localeCompare(b.label));
+        } else if (sortOrder === 'Z-A (Reverse Alphabetical)') {
+            folderItems.sort((a, b) => b.label.localeCompare(a.label));
         }
 
         roots.push(...folderItems);
@@ -60,7 +63,6 @@ class TodoProvider {
         return roots;
     }
 
-    // 📋 UI Section 2: Standard Tasks & Comments
     _getStandardItems(element) {
         const trashData = this.context.globalState.get('trashData', []);
         const priorityTasks = this.context.globalState.get('priorityTasks', []);
@@ -69,17 +71,28 @@ class TodoProvider {
         
         const searchQuery = this.context.globalState.get('searchQuery', '');
         const activeFilter = this.context.globalState.get('activeFilter', 'All Items');
-        const sortOrder = this.context.globalState.get('sortOrder', 'Default');
+        const sortOrder = this.context.globalState.get('sortOrder', 'Default (Time Added)');
 
         const isInTrash = (text) => trashData.some(t => t.text === text);
         const isInPriority = (text) => priorityTasks.some(t => t.text === text);
         const folderName = element.originalText || element.label;
 
-        // Base Filtering (Type & State)
-        let filteredScanned = activeFilter === 'Manual Tasks Only' ? [] : fileComments.filter(c => c.target === (folderName === "General Workspace" ? "General Workspace" : folderName)).filter(c => !isInTrash(c.text) && !isInPriority(c.text));
-        let filteredManual = activeFilter === 'Scanned Only' ? [] : manualTasks.filter(t => t.folder === folderName).filter(t => !isInTrash(t.text) && !isInPriority(t.text));
+        let filteredScanned = fileComments.filter(c => c.target === (folderName === "General Workspace" ? "General Workspace" : folderName)).filter(c => !isInTrash(c.text) && !isInPriority(c.text));
+        let filteredManual = manualTasks.filter(t => t.folder === folderName).filter(t => !isInTrash(t.text) && !isInPriority(t.text));
 
-        // 🔍 Search Engine Logic
+        // Advanced Filters
+        if (activeFilter === 'Manual Tasks Only') filteredScanned = [];
+        if (activeFilter === 'Scanned Comments Only') filteredManual = [];
+        if (activeFilter === 'Bugs Only (🔴)') {
+            filteredScanned = filteredScanned.filter(c => this._formatTag(c.text).includes('🔴'));
+            filteredManual = filteredManual.filter(t => this._formatTag(t.text).includes('🔴'));
+        }
+        if (activeFilter === 'Untagged Items Only') {
+            filteredScanned = filteredScanned.filter(c => this._formatTag(c.text) === "");
+            filteredManual = filteredManual.filter(t => this._formatTag(t.text) === "");
+        }
+
+        // Search Engine
         if (searchQuery) {
             filteredScanned = filteredScanned.filter(c => c.text.toLowerCase().includes(searchQuery) || c.file.toLowerCase().includes(searchQuery));
             filteredManual = filteredManual.filter(t => t.text.toLowerCase().includes(searchQuery));
@@ -87,50 +100,38 @@ class TodoProvider {
 
         let items = [];
         
-        // Render Manual Tasks
         filteredManual.forEach(t => {
             const tagStr = this._formatTag(t.text);
-            const displayLabel = tagStr ? `${tagStr} ${t.text}` : t.text;
-            items.push(new DevFlowItem(displayLabel, "edit", vscode.TreeItemCollapsibleState.None, "standardTask", true, t.text));
+            items.push(new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "edit", vscode.TreeItemCollapsibleState.None, "standardTask", true, t.text));
         });
         
-        // Render Scanned Comments
         filteredScanned.forEach(c => {
             const tagStr = this._formatTag(c.text);
-            const displayLabel = tagStr ? `${tagStr} ${c.text}` : c.text;
-            const it = new DevFlowItem(displayLabel, "go-to-file", vscode.TreeItemCollapsibleState.None, "standardTask", false, c.text);
+            const it = new DevFlowItem(tagStr ? `${tagStr} ${c.text}` : c.text, "go-to-file", vscode.TreeItemCollapsibleState.None, "standardTask", false, c.text);
             it.description = `${c.file} (Line ${c.line})`;
             it.parentLabel = folderName; 
-            
-            // 🔥 Navigation Command: Click karne par file khulegi
-            it.command = {
-                command: 'jargon.openFile',
-                title: 'Open File',
-                arguments: [c.file, c.line]
-            };
+            it.command = { command: 'jargon.openFile', title: 'Open File', arguments: [c.file, c.line] };
             items.push(it);
         });
 
-        // 🔀 Sorting Engine (A-Z)
-        if (sortOrder === 'A-Z') items.sort((a, b) => a.label.localeCompare(b.label));
+        // 🔥 TASKS GLOBAL SORTING
+        if (sortOrder === 'A-Z (Alphabetical)') items.sort((a, b) => a.label.localeCompare(b.label));
+        if (sortOrder === 'Z-A (Reverse Alphabetical)') items.sort((a, b) => b.label.localeCompare(a.label));
 
         return items;
     }
 
-    // ⭐ UI Section 3: Priority Items
     _getPriorityItems() {
         const priorityTasks = this.context.globalState.get('priorityTasks', []);
         return priorityTasks.map(t => {
             const tagStr = this._formatTag(t.text);
-            const displayLabel = tagStr ? `${tagStr} ${t.text}` : t.text;
-            const it = new DevFlowItem(displayLabel, "star", vscode.TreeItemCollapsibleState.None, "priorityTask", true, t.text);
+            const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "star", vscode.TreeItemCollapsibleState.None, "priorityTask", true, t.text);
             it.iconPath = new vscode.ThemeIcon('star', new vscode.ThemeColor('charts.orange')); 
             it.description = t.isScanned ? "(Scanned)" : "(Manual)";
             return it;
         });
     }
 
-    // 🗑️ UI Section 4: Recycle Bin
     _getRecycleItems() {
         const trashData = this.context.globalState.get('trashData', []);
         return trashData.map(t => {
