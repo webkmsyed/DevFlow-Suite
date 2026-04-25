@@ -33,6 +33,11 @@ function registerExport(context) {
         const activeFilter = isCurrentOnly ? context.globalState.get('activeFilter', 'All Items') : 'All Items';
         const sortOrder = isCurrentOnly ? context.globalState.get('sortOrder', 'Default') : 'Default';
 
+        // ... file ka upar ka hissa ...
+ 
+        const activeTagFilter = isCurrentOnly ? context.globalState.get('activeTagFilter', '') : ''; // 🔥 New State
+
+
         const getTag = (txt) => {
             const t = globalTags[txt];
             if (!t) return "";
@@ -44,10 +49,19 @@ function registerExport(context) {
             if (searchQuery) res = res.filter(item => (item.text || "").toLowerCase().includes(searchQuery));
             if (activeFilter === 'Bugs Only (🔴)') res = res.filter(item => getTag(item.text).includes('🔴'));
             if (activeFilter === 'Untagged Items Only') res = res.filter(item => getTag(item.text) === "");
+            
+            // 🔥 NEW: Filter for Export 
+            if (activeFilter === 'Specific Tag' && activeTagFilter) {
+                const getRawTag = (txt) => globalTags[txt] ? globalTags[txt].trim() : "";
+                res = res.filter(item => getRawTag(item.text) === activeTagFilter);
+            }
+
             if (sortOrder === 'A-Z (Alphabetical)') res.sort((a, b) => (a.text || "").localeCompare(b.text || ""));
             if (sortOrder === 'Z-A (Reverse Alphabetical)') res.sort((a, b) => (b.text || "").localeCompare(a.text || ""));
             return res;
         };
+        // ... file ka neeche ka hissa ...
+        
 
         const getItemsForTab = (tab) => {
             if (tab === "Priority Items") {

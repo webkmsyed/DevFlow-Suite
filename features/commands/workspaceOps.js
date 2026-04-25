@@ -6,7 +6,7 @@ function registerWorkspaceCommands(context, todoProvider) {
         const action = await vscode.window.showQuickPick([
             { label: 'Recycle All (Keep Priority)', detail: 'Moves everything except Priority items to Recycle Bin.' },
             { label: 'Recycle Everything', detail: 'Moves ALL tasks and folders to Recycle Bin.' },
-            { label: 'Permanent Wipe (Nuclear)', detail: 'DANGER: Deletes all data permanently. Cannot be undone!' }
+            { label: 'Permanent Wipe (Nuclear)', detail: 'DANGER: Deletes all data in code files and task lists permanently. Cannot be undone!' }
         ], { placeHolder: 'Select Wipe Out Method' });
 
         if (!action) return;

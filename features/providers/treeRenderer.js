@@ -46,6 +46,8 @@ const getRoots = (context) => {
     return roots;
 };
 
+// File: features/providers/treeRenderer.js (Update ONLY getStandardItems function)
+
 const getStandardItems = (context, folderName) => {
     const trashData = context.globalState.get('trashData', []);
     const priorityTasks = context.globalState.get('priorityTasks', []);
@@ -54,6 +56,7 @@ const getStandardItems = (context, folderName) => {
     
     const searchQuery = context.globalState.get('searchQuery', '');
     const activeFilter = context.globalState.get('activeFilter', 'All Items');
+    const activeTagFilter = context.globalState.get('activeTagFilter', ''); // 🔥 Get new state
     const sortOrder = context.globalState.get('sortOrder', 'Default');
 
     const isInTrash = (text) => trashData.some(t => t.text === text);
@@ -62,6 +65,7 @@ const getStandardItems = (context, folderName) => {
     let filteredScanned = activeFilter === 'Manual Tasks Only' ? [] : fileComments.filter(c => c.target === (folderName === "General Workspace" ? "General Workspace" : folderName)).filter(c => !isInTrash(c.text) && !isInPriority(c.text));
     let filteredManual = activeFilter === 'Scanned Comments Only' ? [] : manualTasks.filter(t => t.folder === folderName).filter(t => !isInTrash(t.text) && !isInPriority(t.text));
 
+    // Base Filters
     if (activeFilter === 'Bugs Only (🔴)') {
         filteredScanned = filteredScanned.filter(c => formatTag(context, c.text).includes('🔴'));
         filteredManual = filteredManual.filter(t => formatTag(context, t.text).includes('🔴'));
@@ -70,6 +74,17 @@ const getStandardItems = (context, folderName) => {
         filteredScanned = filteredScanned.filter(c => formatTag(context, c.text) === "");
         filteredManual = filteredManual.filter(t => formatTag(context, t.text) === "");
     }
+    
+    // 🔥 NEW: Apply Custom Tag Filter
+    if (activeFilter === 'Specific Tag' && activeTagFilter) {
+        const getRawTag = (txt) => {
+            const tags = context.globalState.get('itemTags', {});
+            return tags[txt] ? tags[txt].trim() : "";
+        };
+        filteredScanned = filteredScanned.filter(c => getRawTag(c.text) === activeTagFilter);
+        filteredManual = filteredManual.filter(t => getRawTag(t.text) === activeTagFilter);
+    }
+
     if (searchQuery) {
         filteredScanned = filteredScanned.filter(c => c.text.toLowerCase().includes(searchQuery) || c.file.toLowerCase().includes(searchQuery));
         filteredManual = filteredManual.filter(t => t.text.toLowerCase().includes(searchQuery));
