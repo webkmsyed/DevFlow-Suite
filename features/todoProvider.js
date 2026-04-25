@@ -3,59 +3,51 @@ const fs = require('fs');
 const path = require('path');
 
 class TodoProvider {
-    constructor(workspaceRoot) {
+    constructor(workspaceRoot, context) {
         this.workspaceRoot = workspaceRoot;
+        this.context = context; // Persistence ke liye context chahiye
         this._onDidChangeTreeData = new vscode.EventEmitter();
         this.onDidChangeTreeData = this._onDidChangeTreeData.event;
     }
 
-    refresh() {
-        this._onDidChangeTreeData.fire();
-    }
+    refresh() { this._onDidChangeTreeData.fire(); }
+    getTreeItem(element) { return element; }
 
-    getTreeItem(element) {
-        return element;
-    }
+    async getChildren() {
+        const scannedTodos = await this.scanForTodos();
+        const manualTodos = this.context.globalState.get('manualTodos', []);
+        
+        // Dono ko merge karke display karo
+        const allTodos = [...scannedTodos, ...manualTodos];
 
-    async getChildren(element) {
-        if (!this.workspaceRoot) {
-            return [];
-        }
-
-        // Agar hum root par hain, toh files scan karo
-        const todos = await this.scanForTodos();
-        return todos.map(todo => {
-            const treeItem = new vscode.TreeItem(todo.text, vscode.TreeItemCollapsibleState.None);
-            treeItem.description = todo.fileName;
-            treeItem.tooltip = `File: ${todo.fileName} | Line: ${todo.line}`;
-            treeItem.iconPath = new vscode.ThemeIcon('check'); // Simple check icon
+        return allTodos.map(todo => {
+            const item = new vscode.TreeItem(todo.text, vscode.TreeItemCollapsibleState.None);
+            item.description = `${todo.filePath}:${todo.line + 1}`; // Har todo ke saath file/line dikhega
+            item.iconPath = todo.filePath === 'Global' ? new vscode.ThemeIcon('star-full') : new vscode.ThemeIcon('check');
             
-            // Is par click karne se file khulni chahiye
-            treeItem.command = {
-                command: 'vscode.open',
-                title: 'Open File',
-                arguments: [vscode.Uri.file(path.join(this.workspaceRoot, todo.filePath)), {
-                    selection: new vscode.Range(todo.line, 0, todo.line, 0)
-                }]
-            };
-            return treeItem;
+            if(todo.filePath !== 'Global') {
+                item.command = {
+                    command: 'vscode.open',
+                    arguments: [vscode.Uri.file(path.join(this.workspaceRoot, todo.filePath)), {
+                        selection: new vscode.Range(todo.line, 0, todo.line, 0)
+                    }],
+                    title: 'Open'
+                };
+            }
+            return item;
         });
     }
 
     async scanForTodos() {
         const todoList = [];
-        // Professional Way: Sirf coding files scan karo (Exclude node_modules)
+        if (!this.workspaceRoot) return [];
         const files = await vscode.workspace.findFiles('**/*.{js,ts,py,html,css}', '**/node_modules/**');
-
         for (const file of files) {
             const content = fs.readFileSync(file.fsPath, 'utf8');
-            const lines = content.split('\n');
-            
-            lines.forEach((line, index) => {
-                if (line.includes('// TODO:')) {
+            content.split('\n').forEach((line, index) => {
+                if (/\/\/\s*TODO:/.test(line)) {
                     todoList.push({
-                        text: line.replace('// TODO:', '').trim(),
-                        fileName: path.basename(file.fsPath),
+                        text: line.replace(/\/\/\s*TODO:/, '').trim(),
                         filePath: vscode.workspace.asRelativePath(file),
                         line: index
                     });
@@ -65,5 +57,4 @@ class TodoProvider {
         return todoList;
     }
 }
-
 module.exports = TodoProvider;
