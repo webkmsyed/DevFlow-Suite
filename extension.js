@@ -2,18 +2,21 @@
 // @ts-check
 const vscode = require('vscode');
 
-/** @param {vscode.ExtensionContext} context */
 function activate(context) {
     try {
-        // 📦 Saare imports ab yahan andar hain taaki crash na ho aur error pakad aaye
+        // 📦 MODULE IMPORTS
         const TodoProvider = require('./features/todoProvider');
         const { initScanner } = require('./features/engine/scanner');
+        
+        // 📦 COMMAND IMPORTS (Make sure all these files are inside features/commands/)
         const { registerFolderCommands } = require('./features/commands/folderOps');
         const { registerTaskCommands } = require('./features/commands/taskOps');
         const { registerPriorityCommands } = require('./features/commands/priorityOps');
         const { registerTrashCommands } = require('./features/commands/trashOps');
         const { registerWorkspaceCommands } = require('./features/commands/workspaceOps');
-
+        const { registerHistoryCommands } = require('./features/commands/historyOps'); 
+        
+        // 📦 MAIN HEADER IMPORTS
         const { registerSearch } = require('./features/main/searchOps');
         const { registerFilter } = require('./features/main/filterOps');
         const { registerSort } = require('./features/main/sortOps');
@@ -26,53 +29,56 @@ function activate(context) {
         vscode.window.registerTreeDataProvider('todo-explorer', todoProvider);
 
         const scanWorkspaceForComments = initScanner(context, todoProvider);
-        const { registerHistoryCommands } = require('./features/commands/historyOps');
 
-        // 🧩 Injecting Operations
+        // 🧩 INJECTING OPERATIONS
         registerFolderCommands(context, todoProvider, scanWorkspaceForComments);
         registerTaskCommands(context, todoProvider);
         registerPriorityCommands(context, todoProvider);
         registerTrashCommands(context, todoProvider);
         registerWorkspaceCommands(context, todoProvider);
-
-        // 🔥 Injecting Main Header Operations
+        registerHistoryCommands(context, todoProvider); // Undo/Redo Engine
+        
+        // 🔥 INJECTING HEADER OPERATIONS
         registerSearch(context, todoProvider);
         registerFilter(context, todoProvider);
         registerSort(context, todoProvider);
         registerExport(context);
-        registerHistoryCommands(context, todoProvider);
+
+        // 📂 FILE NAVIGATION COMMAND (Fixed Scope Error)
+        context.subscriptions.push(vscode.commands.registerCommand('jargon.openFile', async (file, line) => {
+            const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+            if (!workspaceRoot) return;
+            const fileUri = vscode.Uri.file(require('path').join(workspaceRoot, file));
+            const doc = await vscode.workspace.openTextDocument(fileUri);
+            const editor = await vscode.window.showTextDocument(doc);
+            
+            // Navigate directly to the line
+            const pos = new vscode.Position(line - 1, 0);
+            editor.selection = new vscode.Selection(pos, pos);
+            editor.revealRange(new vscode.Range(pos, pos));
+        }));
 
         // ==========================================
-        // 🟡 PENDING BUTTONS
+        // 🟡 PENDING BUTTONS (Strictly tracked)
         // ==========================================
-        const register = (cmd, handler) => context.subscriptions.push(vscode.commands.registerCommand(cmd, handler));
         const dummy = [
-            'jargon.tabExport', 'jargon.tabFilter', 'jargon.tabSort',
-            'jargon.priExport', 'jargon.priAddAll',
+            'jargon.tabExport', 'jargon.tabFilter', 'jargon.tabSort', 
+            'jargon.priExport', 'jargon.priAddAll', 
             'jargon.recExport', 'jargon.recSearch', 'jargon.taskAddTo'
         ];
-        dummy.forEach(cmd => register(cmd, () => vscode.window.showInformationMessage(`DevFlow-Suite: Logic pending for this button!`)));
+        dummy.forEach(cmd => {
+            context.subscriptions.push(vscode.commands.registerCommand(cmd, () => {
+                vscode.window.showInformationMessage(`DevFlow-Suite: Logic pending for this button!`);
+            }));
+        });
 
     } catch (error) {
-        // 🔥 AGAR KOI FILE MISSING HUI TOH YAHAN POPUP AAYEGA!
+        // Safe Error Catching
         vscode.window.showErrorMessage(`DevFlow-Suite Crash: ${error.message}`);
         console.error("Activation Error:", error);
     }
-    // Command to open file at specific line
-    register('jargon.openFile', async (file, line) => {
-        const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-        if (!rootPath) return;
-        const fileUri = vscode.Uri.file(require('path').join(rootPath, file));
-        const doc = await vscode.workspace.openTextDocument(fileUri);
-        const editor = await vscode.window.showTextDocument(doc);
-
-        // Line par cursor le jane ke liye
-        const pos = new vscode.Position(line - 1, 0);
-        editor.selection = new vscode.Selection(pos, pos);
-        editor.revealRange(new vscode.Range(pos, pos));
-    });
 }
 
-function deactivate() { }
+function deactivate() {}
 
 module.exports = { activate, deactivate };

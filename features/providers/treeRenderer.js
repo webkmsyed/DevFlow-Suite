@@ -3,28 +3,25 @@ const vscode = require('vscode');
 const DevFlowItem = require('../models/DevFlowItem');
 
 const formatTag = (context, taskText) => {
-    const globalTags = context.globalState.get('itemTags', {});
+    // 🔥 Fallback added (|| {}) to prevent crash
+    const globalTags = context.globalState.get('itemTags') || {};
     const rawTag = globalTags[taskText];
     if (!rawTag) return "";
     return (rawTag.toLowerCase().includes("bug") && !rawTag.includes("🔴")) ? `[🔴 ${rawTag}]` : `[${rawTag}]`;
 };
 
-// File: features/providers/treeRenderer.js (Update ONLY getRoots function)
-
 const getRoots = (context) => {
-    const userFolders = context.globalState.get('userFolders', []);
-    const manualTasks = context.globalState.get('manualTasks', []);
-    const fileComments = context.globalState.get('fileComments', []);
-    const trashData = context.globalState.get('trashData', []);
-    const priorityTasks = context.globalState.get('priorityTasks', []);
+    // 🔥 Fallbacks added (|| []) everywhere to make it bulletproof
+    const userFolders = context.globalState.get('userFolders') || [];
+    const manualTasks = context.globalState.get('manualTasks') || [];
+    const fileComments = context.globalState.get('fileComments') || [];
+    const trashData = context.globalState.get('trashData') || [];
+    const priorityTasks = context.globalState.get('priorityTasks') || [];
     const sortOrder = context.globalState.get('sortOrder', 'Default');
 
     const isInTrash = (text) => trashData.some(t => t.text === text);
     const isInPriority = (text) => priorityTasks.some(t => t.text === text);
 
-    // ==========================================
-    // 1. DYNAMIC USER FOLDERS (Top of the list)
-    // ==========================================
     let folderItems = userFolders.map(f => {
         const manualCount = manualTasks.filter(t => t.folder === f && !isInTrash(t.text) && !isInPriority(t.text)).length;
         const scannedCount = fileComments.filter(c => c.target === f && !isInTrash(c.text) && !isInPriority(c.text)).length;
@@ -36,38 +33,30 @@ const getRoots = (context) => {
         return item;
     });
 
-    // 🔥 SORTING: Sirf User Folders par apply hoga!
     if (sortOrder === 'Folder Size (High to Low)') folderItems.sort((a, b) => b.taskCount - a.taskCount);
     else if (sortOrder === 'Folder Size (Low to High)') folderItems.sort((a, b) => a.taskCount - b.taskCount);
     else if (sortOrder === 'A-Z (Alphabetical)') folderItems.sort((a, b) => a.label.localeCompare(b.label));
     else if (sortOrder === 'Z-A (Reverse Alphabetical)') folderItems.sort((a, b) => b.label.localeCompare(a.label));
 
-
-    // ==========================================
-    // 2. SYSTEM TABS (Pinned at the bottom)
-    // ==========================================
+    // SYSTEM TABS (Always visible)
     const systemTabs = [
         new DevFlowItem("General Workspace", "comment-discussion", vscode.TreeItemCollapsibleState.Expanded, "standardTab", false),
         new DevFlowItem("Priority Items", "star-full", vscode.TreeItemCollapsibleState.Expanded, "priorityTab", false),
         new DevFlowItem("Recycle Bin", "trash", vscode.TreeItemCollapsibleState.Collapsed, "recycleTab", false)
     ];
 
-    // 🔥 COMBINE: User Folders upar, System Tabs sabse niche!
     return [...folderItems, ...systemTabs];
 };
 
-
-// File: features/providers/treeRenderer.js (Update ONLY getStandardItems function)
-
 const getStandardItems = (context, folderName) => {
-    const trashData = context.globalState.get('trashData', []);
-    const priorityTasks = context.globalState.get('priorityTasks', []);
-    const fileComments = context.globalState.get('fileComments', []);
-    const manualTasks = context.globalState.get('manualTasks', []);
+    const trashData = context.globalState.get('trashData') || [];
+    const priorityTasks = context.globalState.get('priorityTasks') || [];
+    const fileComments = context.globalState.get('fileComments') || [];
+    const manualTasks = context.globalState.get('manualTasks') || [];
 
     const searchQuery = context.globalState.get('searchQuery', '');
     const activeFilter = context.globalState.get('activeFilter', 'All Items');
-    const activeTagFilter = context.globalState.get('activeTagFilter', ''); // 🔥 Get new state
+    const activeTagFilter = context.globalState.get('activeTagFilter', '');
     const sortOrder = context.globalState.get('sortOrder', 'Default');
 
     const isInTrash = (text) => trashData.some(t => t.text === text);
@@ -76,7 +65,6 @@ const getStandardItems = (context, folderName) => {
     let filteredScanned = activeFilter === 'Manual Tasks Only' ? [] : fileComments.filter(c => c.target === (folderName === "General Workspace" ? "General Workspace" : folderName)).filter(c => !isInTrash(c.text) && !isInPriority(c.text));
     let filteredManual = activeFilter === 'Scanned Comments Only' ? [] : manualTasks.filter(t => t.folder === folderName).filter(t => !isInTrash(t.text) && !isInPriority(t.text));
 
-    // Base Filters
     if (activeFilter === 'Bugs Only (🔴)') {
         filteredScanned = filteredScanned.filter(c => formatTag(context, c.text).includes('🔴'));
         filteredManual = filteredManual.filter(t => formatTag(context, t.text).includes('🔴'));
@@ -85,17 +73,14 @@ const getStandardItems = (context, folderName) => {
         filteredScanned = filteredScanned.filter(c => formatTag(context, c.text) === "");
         filteredManual = filteredManual.filter(t => formatTag(context, t.text) === "");
     }
-
-    // 🔥 NEW: Apply Custom Tag Filter
     if (activeFilter === 'Specific Tag' && activeTagFilter) {
         const getRawTag = (txt) => {
-            const tags = context.globalState.get('itemTags', {});
+            const tags = context.globalState.get('itemTags') || {};
             return tags[txt] ? tags[txt].trim() : "";
         };
         filteredScanned = filteredScanned.filter(c => getRawTag(c.text) === activeTagFilter);
         filteredManual = filteredManual.filter(t => getRawTag(t.text) === activeTagFilter);
     }
-
     if (searchQuery) {
         filteredScanned = filteredScanned.filter(c => c.text.toLowerCase().includes(searchQuery) || c.file.toLowerCase().includes(searchQuery));
         filteredManual = filteredManual.filter(t => t.text.toLowerCase().includes(searchQuery));
@@ -123,7 +108,7 @@ const getStandardItems = (context, folderName) => {
 };
 
 const getPriorityItems = (context) => {
-    const priorityTasks = context.globalState.get('priorityTasks', []);
+    const priorityTasks = context.globalState.get('priorityTasks') || [];
     return priorityTasks.map(t => {
         const tagStr = formatTag(context, t.text);
         const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "star", vscode.TreeItemCollapsibleState.None, "priorityTask", true, t.text);
@@ -133,9 +118,8 @@ const getPriorityItems = (context) => {
     });
 };
 
-// 🔥 FIX 3: Tags ab Recycle Bin mein bhi dikhenge!
 const getRecycleItems = (context) => {
-    const trashData = context.globalState.get('trashData', []);
+    const trashData = context.globalState.get('trashData') || [];
     return trashData.map(t => {
         const tagStr = formatTag(context, t.text);
         const displayLabel = tagStr ? `${tagStr} ${t.text}` : t.text;
