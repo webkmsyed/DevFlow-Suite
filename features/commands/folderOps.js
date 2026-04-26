@@ -1,6 +1,7 @@
 // File: features/commands/folderOps.js
 const vscode = require('vscode');
 const { recordHistory } = require('./historyOps'); // 📸 History Engine Bulaya
+const { logEvent } = require('../engine/logger');
 
 function registerFolderCommands(context, todoProvider, scanWorkspaceForComments) {
     const register = (cmd, handler) => context.subscriptions.push(vscode.commands.registerCommand(cmd, handler));
@@ -13,6 +14,7 @@ function registerFolderCommands(context, todoProvider, scanWorkspaceForComments)
             let folders = context.globalState.get('userFolders', []);
             folders.push(folderName);
             await context.globalState.update('userFolders', folders);
+            logEvent(context, 'Folder Created', `Created new folder '${folderName}'`);
             scanWorkspaceForComments(); 
         }
     });

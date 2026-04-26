@@ -1,6 +1,7 @@
 // File: features/providers/dragDropController.js
 const vscode = require('vscode');
 const { recordHistory } = require('../commands/historyOps');
+const { logEvent } = require('../engine/logger'); 
 
 class DragDropController {
     constructor(context, todoProvider) {
@@ -88,6 +89,7 @@ class DragDropController {
         await this.context.globalState.update('priorityTasks', priorityTasks);
         await this.context.globalState.update('manualTasks', manualTasks);
         await this.context.globalState.update('fileComments', fileComments);
+        logEvent(this.context, 'Move', `Moved item '${sourceText}' to '${targetLabel}'`);
         
         this.todoProvider.refresh();
     }
