@@ -3,7 +3,6 @@ const vscode = require('vscode');
 const DevFlowItem = require('../models/DevFlowItem');
 
 const formatTag = (context, taskText) => {
-    // 🔥 Fallback added (|| {}) to prevent crash
     const globalTags = context.globalState.get('itemTags') || {};
     const rawTag = globalTags[taskText];
     if (!rawTag) return "";
@@ -11,7 +10,6 @@ const formatTag = (context, taskText) => {
 };
 
 const getRoots = (context) => {
-    // 🔥 Fallbacks added (|| []) everywhere to make it bulletproof
     const userFolders = context.globalState.get('userFolders') || [];
     const manualTasks = context.globalState.get('manualTasks') || [];
     const fileComments = context.globalState.get('fileComments') || [];
@@ -38,7 +36,6 @@ const getRoots = (context) => {
     else if (sortOrder === 'A-Z (Alphabetical)') folderItems.sort((a, b) => a.label.localeCompare(b.label));
     else if (sortOrder === 'Z-A (Reverse Alphabetical)') folderItems.sort((a, b) => b.label.localeCompare(a.label));
 
-    // SYSTEM TABS (Always visible)
     const systemTabs = [
         new DevFlowItem("General Workspace", "comment-discussion", vscode.TreeItemCollapsibleState.Expanded, "standardTab", false),
         new DevFlowItem("Priority Items", "star-full", vscode.TreeItemCollapsibleState.Expanded, "priorityTab", false),
@@ -53,7 +50,7 @@ const getStandardItems = (context, folderName) => {
     const priorityTasks = context.globalState.get('priorityTasks') || [];
     const fileComments = context.globalState.get('fileComments') || [];
     const manualTasks = context.globalState.get('manualTasks') || [];
-
+    
     const searchQuery = context.globalState.get('searchQuery', '');
     const activeFilter = context.globalState.get('activeFilter', 'All Items');
     const activeTagFilter = context.globalState.get('activeTagFilter', '');
@@ -87,16 +84,20 @@ const getStandardItems = (context, folderName) => {
     }
 
     let items = [];
+    
+    // 🔥 FIX 2: Manual tasks pe "User Created" label add kar diya
     filteredManual.forEach(t => {
         const tagStr = formatTag(context, t.text);
-        items.push(new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "edit", vscode.TreeItemCollapsibleState.None, "standardTask", true, t.text));
+        const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "edit", vscode.TreeItemCollapsibleState.None, "standardTask", true, t.text);
+        it.description = "(User Created)";
+        items.push(it);
     });
-
+    
     filteredScanned.forEach(c => {
         const tagStr = formatTag(context, c.text);
         const it = new DevFlowItem(tagStr ? `${tagStr} ${c.text}` : c.text, "go-to-file", vscode.TreeItemCollapsibleState.None, "standardTask", false, c.text);
         it.description = `${c.file} (Line ${c.line})`;
-        it.parentLabel = folderName;
+        it.parentLabel = folderName; 
         it.command = { command: 'jargon.openFile', title: 'Open File', arguments: [c.file, c.line] };
         items.push(it);
     });
@@ -109,11 +110,25 @@ const getStandardItems = (context, folderName) => {
 
 const getPriorityItems = (context) => {
     const priorityTasks = context.globalState.get('priorityTasks') || [];
+    const fileComments = context.globalState.get('fileComments') || []; // Added to cross-reference
+
     return priorityTasks.map(t => {
         const tagStr = formatTag(context, t.text);
         const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "star", vscode.TreeItemCollapsibleState.None, "priorityTask", true, t.text);
-        it.iconPath = new vscode.ThemeIcon('star', new vscode.ThemeColor('charts.orange'));
-        it.description = t.isScanned ? "(Scanned)" : "(Manual)";
+        it.iconPath = new vscode.ThemeIcon('star', new vscode.ThemeColor('charts.orange')); 
+        
+        // 🔥 FIX 3: Priority items ko unka click command aur file location wapas diya!
+        if (t.isScanned) {
+            const scannedData = fileComments.find(c => c.text === t.text);
+            if (scannedData) {
+                it.description = `${scannedData.file} (Line ${scannedData.line})`;
+                it.command = { command: 'jargon.openFile', title: 'Open File', arguments: [scannedData.file, scannedData.line] };
+            } else {
+                it.description = "(Scanned)";
+            }
+        } else {
+            it.description = "(User Created)";
+        }
         return it;
     });
 };
@@ -123,7 +138,11 @@ const getRecycleItems = (context) => {
     return trashData.map(t => {
         const tagStr = formatTag(context, t.text);
         const displayLabel = tagStr ? `${tagStr} ${t.text}` : t.text;
-        const it = new DevFlowItem(displayLabel, "history", vscode.TreeItemCollapsibleState.None, "recycleTask", false, t.text);
+        
+        // 🔥 FIX 4: Recycle Bin me bhi Pencil(edit) vs File(go-to-file) icon!
+        const icon = t.isScanned ? "go-to-file" : "edit";
+        const it = new DevFlowItem(displayLabel, icon, vscode.TreeItemCollapsibleState.None, "recycleTask", false, t.text);
+        
         it.description = t.description || `(from: ${t.deletedFrom})`;
         return it;
     });

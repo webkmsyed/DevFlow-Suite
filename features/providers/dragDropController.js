@@ -24,8 +24,7 @@ class DragDropController {
         let targetLabel = target.originalText || target.label;
         let targetContext = target.contextValue;
 
-        // 🧠 INTELLIGENT TARGET RESOLUTION (The Bug Fix)
-        // Agar user ne kisi folder ke badle "Task" ke upar drop kar diya hai
+        // 🧠 Intelligent Target Resolution
         if (!['standardTab', 'priorityTab', 'recycleTab'].includes(targetContext)) {
             if (targetContext === 'priorityTask') {
                 targetLabel = "Priority Items";
@@ -34,10 +33,8 @@ class DragDropController {
                 targetLabel = "Recycle Bin";
                 targetContext = "recycleTab";
             } else {
-                // Find parent folder of the task we dropped on
                 let manualTasks = this.context.globalState.get('manualTasks') || [];
                 let fileComments = this.context.globalState.get('fileComments') || [];
-                
                 let foundManual = manualTasks.find(t => t.text === targetLabel);
                 let foundScanned = fileComments.find(c => c.text === targetLabel);
                 
@@ -49,36 +46,30 @@ class DragDropController {
             }
         }
 
-        // ❌ Rule: Folders ko drag nahi kar sakte
         if (['standardTab', 'priorityTab', 'recycleTab'].includes(sourceItem.contextValue)) return;
-
-        // ❌ Rule: Recycle Bin mein drop disable
         if (targetContext === 'recycleTab' || targetLabel === 'Recycle Bin') {
             vscode.window.showInformationMessage("Use the Delete button to move items to Recycle Bin.");
             return;
         }
 
-        recordHistory(this.context); // 📸 Undo Snapshot (Time Machine)
+        recordHistory(this.context);
 
         let manualTasks = this.context.globalState.get('manualTasks') || [];
         let priorityTasks = this.context.globalState.get('priorityTasks') || [];
         let fileComments = this.context.globalState.get('fileComments') || [];
-        const isScanned = sourceItem.description && sourceItem.description.includes('Line');
+        
+        // 🔥 FIX 1: Solid Check (Memory mein dhoondhega, string mein nahi)
+        const isScanned = fileComments.some(c => c.text === sourceText);
 
-        // --- PHASE 1: REMOVE FROM OLD STATE ---
-        // Agar hum Priority se kahin aur ja rahe hain, toh Priority se delete karo
         if (targetContext !== 'priorityTab') {
             priorityTasks = priorityTasks.filter(p => p.text !== sourceText);
         }
 
-        // --- PHASE 2: ADD TO NEW STATE ---
         if (targetContext === 'priorityTab') {
-            // Target Priority Hai
             if (!priorityTasks.some(p => p.text === sourceText)) {
                 priorityTasks.push({ text: sourceText, isScanned: isScanned });
             }
         } else {
-            // Target Normal Folder Hai
             if (isScanned) {
                 const commentIdx = fileComments.findIndex(c => c.text === sourceText);
                 if (commentIdx > -1) {
@@ -94,7 +85,6 @@ class DragDropController {
             }
         }
 
-        // --- PHASE 3: SAVE & REFRESH ---
         await this.context.globalState.update('priorityTasks', priorityTasks);
         await this.context.globalState.update('manualTasks', manualTasks);
         await this.context.globalState.update('fileComments', fileComments);
