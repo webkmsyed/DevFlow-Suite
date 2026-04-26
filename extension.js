@@ -7,15 +7,15 @@ function activate(context) {
         // 📦 MODULE IMPORTS
         const TodoProvider = require('./features/todoProvider');
         const { initScanner } = require('./features/engine/scanner');
-        
+
         // 📦 COMMAND IMPORTS (Make sure all these files are inside features/commands/)
         const { registerFolderCommands } = require('./features/commands/folderOps');
         const { registerTaskCommands } = require('./features/commands/taskOps');
         const { registerPriorityCommands } = require('./features/commands/priorityOps');
         const { registerTrashCommands } = require('./features/commands/trashOps');
         const { registerWorkspaceCommands } = require('./features/commands/workspaceOps');
-        const { registerHistoryCommands } = require('./features/commands/historyOps'); 
-        
+        const { registerHistoryCommands } = require('./features/commands/historyOps');
+
         // 📦 MAIN HEADER IMPORTS
         const { registerSearch } = require('./features/main/searchOps');
         const { registerFilter } = require('./features/main/filterOps');
@@ -26,7 +26,15 @@ function activate(context) {
 
         const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
         const todoProvider = new TodoProvider(rootPath, context);
-        vscode.window.registerTreeDataProvider('todo-explorer', todoProvider);
+
+        // 🔥 NAYA: TreeView ko Drag & Drop ke sath initialize kiya!
+        const treeView = vscode.window.createTreeView('todo-explorer', {
+            treeDataProvider: todoProvider,
+            dragAndDropController: todoProvider,
+            canSelectMany: false,
+            showCollapseAll: true
+        });
+        context.subscriptions.push(treeView);
 
         const scanWorkspaceForComments = initScanner(context, todoProvider);
 
@@ -37,7 +45,7 @@ function activate(context) {
         registerTrashCommands(context, todoProvider);
         registerWorkspaceCommands(context, todoProvider);
         registerHistoryCommands(context, todoProvider); // Undo/Redo Engine
-        
+
         // 🔥 INJECTING HEADER OPERATIONS
         registerSearch(context, todoProvider);
         registerFilter(context, todoProvider);
@@ -51,7 +59,7 @@ function activate(context) {
             const fileUri = vscode.Uri.file(require('path').join(workspaceRoot, file));
             const doc = await vscode.workspace.openTextDocument(fileUri);
             const editor = await vscode.window.showTextDocument(doc);
-            
+
             // Navigate directly to the line
             const pos = new vscode.Position(line - 1, 0);
             editor.selection = new vscode.Selection(pos, pos);
@@ -62,8 +70,8 @@ function activate(context) {
         // 🟡 PENDING BUTTONS (Strictly tracked)
         // ==========================================
         const dummy = [
-            'jargon.tabExport', 'jargon.tabFilter', 'jargon.tabSort', 
-            'jargon.priExport', 'jargon.priAddAll', 
+            'jargon.tabExport', 'jargon.tabFilter', 'jargon.tabSort',
+            'jargon.priExport', 'jargon.priAddAll',
             'jargon.recExport', 'jargon.recSearch', 'jargon.taskAddTo'
         ];
         dummy.forEach(cmd => {
@@ -79,6 +87,6 @@ function activate(context) {
     }
 }
 
-function deactivate() {}
+function deactivate() { }
 
 module.exports = { activate, deactivate };
