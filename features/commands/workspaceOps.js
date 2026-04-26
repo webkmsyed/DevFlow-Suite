@@ -16,11 +16,16 @@ function registerWorkspaceCommands(context, todoProvider) {
         if (action.label.includes('Total')) {
             // Step 1: Explicit Warning Dialog
             const confirm1 = await vscode.window.showWarningMessage(
-                "🚨 DANGER: This will permanently delete:\n1. All User Folders & Tasks\n2. All Priority Items\n3. The Entire Recycle Bin\n4. ALL Scanned Comments physically from your code files!\n\nAre you absolutely sure?",
+                "🚨 DANGER: This will permanently wipe DevFlow-Suite data:\n\n" +
+                "1. All Virtual Folders & Manual Tasks (Your actual project files are 100% SAFE)\n" +
+                "2. All Priority Items\n" +
+                "3. The Entire Recycle Bin\n" +
+                "4. ALL Scanned Comments (e.g., // TODO) will be removed physically. (Only the comments will be deleted, NO actual code will be touched!)\n\n" +
+                "Are you absolutely sure you want to proceed?",
                 { modal: true },
                 "Yes, Proceed to Final Step"
             );
-            
+
             if (confirm1 !== "Yes, Proceed to Final Step") return;
 
             // Step 2: Typing Verification (The GitHub Style Lock)
@@ -59,7 +64,7 @@ function registerWorkspaceCommands(context, todoProvider) {
             if (!rootPath) return;
             const edit = new vscode.WorkspaceEdit();
             const grouped = {};
-            comments.forEach(c => { if(!grouped[c.file]) grouped[c.file] = []; grouped[c.file].push(c); });
+            comments.forEach(c => { if (!grouped[c.file]) grouped[c.file] = []; grouped[c.file].push(c); });
             for (const file in grouped) {
                 const fileUri = vscode.Uri.joinPath(rootPath, file);
                 const sorted = grouped[file].sort((a, b) => b.line - a.line);
@@ -69,7 +74,7 @@ function registerWorkspaceCommands(context, todoProvider) {
             }
             await vscode.workspace.applyEdit(edit);
             for (const f in grouped) {
-                try { const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootPath, f)); await doc.save(); } catch(e){}
+                try { const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(rootPath, f)); await doc.save(); } catch (e) { }
             }
         };
 
@@ -77,7 +82,7 @@ function registerWorkspaceCommands(context, todoProvider) {
             // 🔥 NUCLEAR
             await deletePhysicalComments(fileComments);
             await context.globalState.update('manualTasks', []);
-            await context.globalState.update('priorityTasks', []); 
+            await context.globalState.update('priorityTasks', []);
             await context.globalState.update('userFolders', []);
             await context.globalState.update('fileComments', []);
             await context.globalState.update('trashData', []);
@@ -89,10 +94,10 @@ function registerWorkspaceCommands(context, todoProvider) {
             manualTasks.forEach(t => trash.push({ ...t, deletedFrom: t.folder, isScanned: false, isPriority: false }));
             if (!keepPriority) {
                 priorityTasks.forEach(p => trash.push({ ...p, deletedFrom: 'Priority', isScanned: p.isScanned, isPriority: true }));
-                await context.globalState.update('priorityTasks', []); 
+                await context.globalState.update('priorityTasks', []);
             }
             fileComments.forEach(c => {
-                trash.push({ id: Date.now()+Math.random(), text: c.text, deletedFrom: c.target, isScanned: true, originalLine: c.line, originalFile: c.file, isPriority: priorityTasks.some(p => p.text === c.text) });
+                trash.push({ id: Date.now() + Math.random(), text: c.text, deletedFrom: c.target, isScanned: true, originalLine: c.line, originalFile: c.file, isPriority: priorityTasks.some(p => p.text === c.text) });
             });
             await deletePhysicalComments(fileComments);
             await context.globalState.update('manualTasks', []);
