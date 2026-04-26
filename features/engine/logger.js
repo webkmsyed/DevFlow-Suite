@@ -1,7 +1,7 @@
 // File: features/engine/logger.js
 const vscode = require('vscode');
 
-const logEvent = async (context, action, details) => {
+const logEvent = async (context, action, details, file = null, line = null) => {
     let logs = context.globalState.get('auditLogs', []);
     
     // Formatting exact time (e.g., 10:30 AM)
@@ -13,7 +13,9 @@ const logEvent = async (context, action, details) => {
         id: Date.now(),
         timestamp: `${dateString} ${timeString}`,
         action: action,     // Example: "Move Task", "Delete Folder"
-        details: details    // Example: "Moved 'Fix API' to 'Priority'"
+        details: details,    // Example: "Moved 'Fix API' to 'Priority'"
+        file: file, // 🔥 NAYA: File path save hoga
+        line: line  // 🔥 NAYA: Line number save hoga
     };
 
     // Naye event ko list ke shuru (Top) mein daalo
