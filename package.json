@@ -82,6 +82,11 @@
         "icon": "$(book)"
       },
       {
+        "command": "jargon.openTimeline",
+        "title": "Activity Timeline",
+        "icon": "$(history)"
+      },
+      {
         "command": "jargon.tabTask",
         "title": "Create Task",
         "icon": "$(add)"
@@ -245,6 +250,11 @@
           "command": "jargon.tabTask",
           "when": "view == todo-explorer && viewItem == standardTab",
           "group": "inline@1"
+        },
+        {
+          "command": "jargon.openTimeline",
+          "when": "view == todo-explorer",
+          "group": "navigation@5"
         },
         {
           "command": "jargon.tabSavePri",

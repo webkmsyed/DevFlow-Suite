@@ -2,6 +2,7 @@
 // @ts-check
 const vscode = require('vscode');
 const { registerNoteCommands } = require('./features/notes/noteEngine');
+const { registerTimeline } = require('./features/main/timelineOps');
 
 function activate(context) {
     try {
@@ -23,6 +24,7 @@ function activate(context) {
         const { registerFilter } = require('./features/main/filterOps');
         const { registerSort } = require('./features/main/sortOps');
         const { registerExport } = require('./features/main/exportOps');
+        
 
         console.log('DevFlow-Suite: Micro-Services Architecture Active! 🚀');
 
@@ -54,6 +56,7 @@ function activate(context) {
         registerSort(context, todoProvider);
         registerExport(context);
         registerNoteCommands(context); // 📝 Operation 10: Markdown Notes
+        registerTimeline(context); // ⏳ Operation 11: Timeline UI
 
         // 📂 FILE NAVIGATION COMMAND (Fixed Scope Error)
         context.subscriptions.push(vscode.commands.registerCommand('jargon.openFile', async (file, line) => {
