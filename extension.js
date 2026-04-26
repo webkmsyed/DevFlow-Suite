@@ -1,6 +1,7 @@
 // File: extension.js
 // @ts-check
 const vscode = require('vscode');
+const { registerNoteCommands } = require('./features/notes/noteEngine');
 
 function activate(context) {
     try {
@@ -15,6 +16,7 @@ function activate(context) {
         const { registerTrashCommands } = require('./features/commands/trashOps');
         const { registerWorkspaceCommands } = require('./features/commands/workspaceOps');
         const { registerHistoryCommands } = require('./features/commands/historyOps');
+
 
         // 📦 MAIN HEADER IMPORTS
         const { registerSearch } = require('./features/main/searchOps');
@@ -51,6 +53,7 @@ function activate(context) {
         registerFilter(context, todoProvider);
         registerSort(context, todoProvider);
         registerExport(context);
+        registerNoteCommands(context); // 📝 Operation 10: Markdown Notes
 
         // 📂 FILE NAVIGATION COMMAND (Fixed Scope Error)
         context.subscriptions.push(vscode.commands.registerCommand('jargon.openFile', async (file, line) => {

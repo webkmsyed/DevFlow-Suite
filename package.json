@@ -233,6 +233,11 @@
           "command": "jargon.mainRedo",
           "when": "view == todo-explorer",
           "group": "navigation@9"
+        },
+        {
+          "command": "jargon.openNote",
+          "title": "Open Note",
+          "icon": "$(book)"
         }
       ],
       "view/item/context": [
@@ -270,6 +275,11 @@
           "command": "jargon.tabSort",
           "when": "view == todo-explorer && viewItem == standardTab",
           "group": "inline@7"
+        },
+        {
+          "command": "jargon.openNote",
+          "when": "viewItem =~ /standardTask|priorityTask/",
+          "group": "inline"
         },
         {
           "command": "jargon.priRemoveAll",
