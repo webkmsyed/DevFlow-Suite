@@ -77,6 +77,11 @@
         "icon": "$(share)"
       },
       {
+        "command": "jargon.openNote",
+        "title": "Open Note",
+        "icon": "$(book)"
+      },
+      {
         "command": "jargon.tabTask",
         "title": "Create Task",
         "icon": "$(add)"
@@ -233,11 +238,6 @@
           "command": "jargon.mainRedo",
           "when": "view == todo-explorer",
           "group": "navigation@9"
-        },
-        {
-          "command": "jargon.openNote",
-          "title": "Open Note",
-          "icon": "$(book)"
         }
       ],
       "view/item/context": [
@@ -278,7 +278,7 @@
         },
         {
           "command": "jargon.openNote",
-          "when": "viewItem =~ /standardTask|priorityTask/",
+          "when": "viewItem =~ /standardTask|priorityTask|standardTab/",
           "group": "inline"
         },
         {

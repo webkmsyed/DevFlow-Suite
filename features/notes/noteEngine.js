@@ -124,9 +124,13 @@ function getWebviewContent(taskTitle, noteContent) {
             }
             textarea {
                 flex: 1;
-                background: transparent;
-                border: none;
-                color: var(--vscode-editor-foreground);
+                /* 🔥 Box ki line aur background ko har theme ke liye visible banaya */
+                background: rgba(128, 128, 128, 0.05) !important; 
+                border: 1px solid rgba(128, 128, 128, 0.25) !important; 
+                border-radius: 8px;
+                padding: 12px;
+                
+                color: var(--vscode-editor-foreground) !important;
                 font-size: 14px;
                 line-height: 1.7;
                 resize: none;
@@ -134,7 +138,7 @@ function getWebviewContent(taskTitle, noteContent) {
                 font-family: 'Fira Code', Consolas, monospace;
             }
             textarea::placeholder {
-                color: var(--vscode-editor-inactiveSelectionBackground);
+                color: #fcf;
             }
             /* Custom Scrollbar for sleek look */
             ::-webkit-scrollbar { width: 8px; }
