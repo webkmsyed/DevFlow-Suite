@@ -1,6 +1,11 @@
 // File: features/engine/logger.js
 const vscode = require('vscode');
 
+const triggerTimelineRefresh = () => {
+    // 🔄 Yeh hidden command Timeline ko batayegi ki naya data aaya hai!
+    vscode.commands.executeCommand('jargon.internalRefreshTimeline');
+};
+
 const logEvent = async (context, action, details, file = null, line = null) => {
     let logs = context.globalState.get('auditLogs', []);
     const now = new Date();
@@ -8,28 +13,30 @@ const logEvent = async (context, action, details, file = null, line = null) => {
     const dateString = now.toLocaleDateString();
 
     const newEvent = {
-        id: Date.now(), // 🔥 ID zaruri hai star karne ke liye
+        id: Date.now(),
         date: dateString,
         time: timeString,
         action: action,
         details: details,
         file: file,
         line: line,
-        isStarred: false // ⭐ Naya star feature
+        isStarred: false
     };
 
     logs.unshift(newEvent);
     if (logs.length > 100) logs.pop();
     await context.globalState.update('auditLogs', logs);
+    
+    triggerTimelineRefresh(); // 🔥 Auto-Sync Triggered!
 };
 
-// ⭐ NAYA FUNCTION: Log ko Star/Unstar karne ke liye
 const toggleLogStar = async (context, logId) => {
     let logs = context.globalState.get('auditLogs', []);
     const logIndex = logs.findIndex(l => l.id === logId);
     if (logIndex > -1) {
         logs[logIndex].isStarred = !logs[logIndex].isStarred;
         await context.globalState.update('auditLogs', logs);
+        triggerTimelineRefresh(); // 🔥 Auto-Sync Triggered!
     }
 };
 
@@ -39,6 +46,7 @@ const getLogs = (context) => {
 
 const clearLogs = async (context) => {
     await context.globalState.update('auditLogs', []);
+    triggerTimelineRefresh();
 };
 
 module.exports = { logEvent, getLogs, clearLogs, toggleLogStar };
