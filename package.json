@@ -199,50 +199,51 @@
     ],
     "menus": {
       "view/title": [
+        
         {
           "command": "jargon.mainFolder",
-          "when": "view == todo-explorer",
-          "group": "navigation@1"
-        },
-        {
-          "command": "jargon.mainExport",
           "when": "view == todo-explorer",
           "group": "navigation@2"
         },
         {
-          "command": "jargon.mainRefresh",
+          "command": "jargon.mainExport",
           "when": "view == todo-explorer",
           "group": "navigation@3"
         },
         {
-          "command": "jargon.mainDelete",
+          "command": "jargon.mainRefresh",
           "when": "view == todo-explorer",
           "group": "navigation@4"
         },
         {
-          "command": "jargon.mainFilter",
+          "command": "jargon.mainDelete",
           "when": "view == todo-explorer",
           "group": "navigation@5"
         },
         {
-          "command": "jargon.mainSearch",
+          "command": "jargon.mainFilter",
           "when": "view == todo-explorer",
           "group": "navigation@6"
         },
         {
-          "command": "jargon.mainSort",
+          "command": "jargon.mainSearch",
           "when": "view == todo-explorer",
           "group": "navigation@7"
         },
         {
-          "command": "jargon.mainUndo",
+          "command": "jargon.mainSort",
           "when": "view == todo-explorer",
           "group": "navigation@8"
         },
         {
-          "command": "jargon.mainRedo",
+          "command": "jargon.mainUndo",
           "when": "view == todo-explorer",
           "group": "navigation@9"
+        },
+        {
+          "command": "jargon.mainRedo",
+          "when": "view == todo-explorer",
+          "group": "navigation@10"
         }
       ],
       "view/item/context": [
@@ -250,11 +251,6 @@
           "command": "jargon.tabTask",
           "when": "view == todo-explorer && viewItem == standardTab",
           "group": "inline@1"
-        },
-        {
-          "command": "jargon.openTimeline",
-          "when": "view == todo-explorer",
-          "group": "navigation@5"
         },
         {
           "command": "jargon.tabSavePri",

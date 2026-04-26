@@ -1,19 +1,23 @@
-// File: features/commands/trashOps.js
 const vscode = require('vscode');
-const { recordHistory } = require('./historyOps'); // 📸 History Engine Bulaya
+const { logEvent } = require('../engine/logger');
+
+// Bulletproof import logic
+let recordHistory;
+try { recordHistory = require('./historyOps').recordHistory; } 
+catch(e) { recordHistory = require('../engine/historyOps').recordHistory; }
 
 function registerTrashCommands(context, todoProvider) {
     const register = (cmd, handler) => context.subscriptions.push(vscode.commands.registerCommand(cmd, handler));
 
     register('jargon.taskDelTemp', async (node) => {
         if (!node) return;
-        recordHistory(context); // 🔥 Delete hone se pehle yaad rakho!
+        if (recordHistory) recordHistory(context); 
 
         let trash = context.globalState.get('trashData', []);
         let pri = context.globalState.get('priorityTasks', []);
-        
+
         const isScanned = node.description && node.description.includes('Line');
-        const wasPriority = pri.some(t => t.text === node.originalText); 
+        const wasPriority = pri.some(t => t.text === node.originalText);
 
         const newItem = { id: Date.now(), text: node.originalText, description: node.description, isScanned: isScanned, deletedFrom: node.parentLabel || "General Workspace", originalLine: null, originalFile: null, isPriority: wasPriority };
 
@@ -29,33 +33,37 @@ function registerTrashCommands(context, todoProvider) {
                     await vscode.workspace.applyEdit(edit);
                     const doc = await vscode.workspace.openTextDocument(fileUri);
                     await doc.save();
-                } catch (err) {}
+                } catch (err) { }
             }
         } else {
             let tasks = context.globalState.get('manualTasks', []);
             tasks = tasks.filter(t => t.text !== node.originalText);
             await context.globalState.update('manualTasks', tasks);
         }
-        
+
         pri = pri.filter(t => t.text !== node.originalText);
         await context.globalState.update('priorityTasks', pri);
 
         trash.push(newItem);
         await context.globalState.update('trashData', trash);
         todoProvider.refresh();
+        logEvent(context, 'Delete', `Moved task '${node.originalText}' to Recycle Bin`, null, null);
     });
 
     register('jargon.taskRestore', async (node) => {
         if (!node) return;
-        recordHistory(context); // 🔥 Restore hone se pehle yaad rakho!
+        if (recordHistory) recordHistory(context); 
 
         let trash = context.globalState.get('trashData', []);
         const itemIndex = trash.findIndex(t => t.text === node.originalText);
+        let restoredFile = null;
+        let restoredLine = null;
 
         if (itemIndex > -1) {
             const item = trash[itemIndex];
-            
             if (item.isScanned && item.originalFile && vscode.workspace.workspaceFolders) {
+                restoredFile = item.originalFile;
+                restoredLine = item.originalLine;
                 const fileUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, item.originalFile);
                 try {
                     const edit = new vscode.WorkspaceEdit();
@@ -63,13 +71,12 @@ function registerTrashCommands(context, todoProvider) {
                     await vscode.workspace.applyEdit(edit);
                     const doc = await vscode.workspace.openTextDocument(fileUri);
                     await doc.save();
-                } catch (err) {}
+                } catch (err) { }
             } else if (!item.isScanned) {
                 let tasks = context.globalState.get('manualTasks', []);
                 tasks.push({ id: item.id, text: item.text, folder: item.deletedFrom });
                 await context.globalState.update('manualTasks', tasks);
             }
-
             if (item.isPriority) {
                 let pri = context.globalState.get('priorityTasks', []);
                 if (!pri.some(p => p.text === item.text)) {
@@ -77,27 +84,29 @@ function registerTrashCommands(context, todoProvider) {
                     await context.globalState.update('priorityTasks', pri);
                 }
             }
-
             trash.splice(itemIndex, 1);
             await context.globalState.update('trashData', trash);
             todoProvider.refresh();
+            logEvent(context, 'Restore', `Restored '${item.text}' to '${item.deletedFrom}'`, restoredFile, restoredLine);
         }
     });
 
     register('jargon.taskDelPerm', async (node) => {
         if (!node) return;
-        recordHistory(context); // 🔥 Parmanent delete se pehle yaad rakho!
+        if (recordHistory) recordHistory(context); 
         let trash = context.globalState.get('trashData', []);
         trash = trash.filter(t => t.text !== node.originalText);
         await context.globalState.update('trashData', trash);
         todoProvider.refresh();
+        logEvent(context, 'Delete', `Permanently deleted task '${node.originalText}'`, null, null);
     });
 
     register('jargon.recDeleteAll', async () => {
-        recordHistory(context); // 🔥 Kachra khali karne se pehle yaad rakho!
+        if (recordHistory) recordHistory(context); 
         await context.globalState.update('trashData', []);
         todoProvider.refresh();
         vscode.window.showInformationMessage("Recycle bin emptied.");
+        logEvent(context, 'Delete', `Emptied the Recycle Bin completely`, null, null);
     });
 }
 

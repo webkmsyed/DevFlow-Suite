@@ -18,11 +18,14 @@ const getRoots = (context) => {
     const sortOrder = context.globalState.get('sortOrder', 'Default');
 
     const isInTrash = (text) => trashData.some(t => t.text === text);
-    const isInPriority = (text) => priorityTasks.some(t => t.text === text);
+    
+    // 🔥 NAYA: Sirf EXACT File aur Line wala Priority se hide hoga!
+    const isScannedInPriority = (c) => priorityTasks.some(p => p.isScanned && p.file === c.file && p.line === c.line);
+    const isManualInPriority = (t) => priorityTasks.some(p => !p.isScanned && p.text === t.text && p.folder === t.folder);
 
     let folderItems = userFolders.map(f => {
-        const manualCount = manualTasks.filter(t => t.folder === f && !isInTrash(t.text) && !isInPriority(t.text)).length;
-        const scannedCount = fileComments.filter(c => c.target === f && !isInTrash(c.text) && !isInPriority(c.text)).length;
+        const manualCount = manualTasks.filter(t => t.folder === f && !isInTrash(t.text) && !isManualInPriority(t)).length;
+        const scannedCount = fileComments.filter(c => c.target === f && !isInTrash(c.text) && !isScannedInPriority(c)).length;
         const taskCount = manualCount + scannedCount;
 
         const item = new DevFlowItem(f, "folder-active", vscode.TreeItemCollapsibleState.Expanded, "standardTab", true, f);
@@ -57,10 +60,13 @@ const getStandardItems = (context, folderName) => {
     const sortOrder = context.globalState.get('sortOrder', 'Default');
 
     const isInTrash = (text) => trashData.some(t => t.text === text);
-    const isInPriority = (text) => priorityTasks.some(t => t.text === text);
+    
+    // 🔥 NAYA: Sirf EXACT File aur Line wala hide hoga
+    const isScannedInPriority = (c) => priorityTasks.some(p => p.isScanned && p.file === c.file && p.line === c.line);
+    const isManualInPriority = (t) => priorityTasks.some(p => !p.isScanned && p.text === t.text && p.folder === t.folder);
 
-    let filteredScanned = activeFilter === 'Manual Tasks Only' ? [] : fileComments.filter(c => c.target === (folderName === "General Workspace" ? "General Workspace" : folderName)).filter(c => !isInTrash(c.text) && !isInPriority(c.text));
-    let filteredManual = activeFilter === 'Scanned Comments Only' ? [] : manualTasks.filter(t => t.folder === folderName).filter(t => !isInTrash(t.text) && !isInPriority(t.text));
+    let filteredScanned = activeFilter === 'Manual Tasks Only' ? [] : fileComments.filter(c => c.target === (folderName === "General Workspace" ? "General Workspace" : folderName)).filter(c => !isInTrash(c.text) && !isScannedInPriority(c));
+    let filteredManual = activeFilter === 'Scanned Comments Only' ? [] : manualTasks.filter(t => t.folder === folderName).filter(t => !isInTrash(t.text) && !isManualInPriority(t));
 
     if (activeFilter === 'Bugs Only (🔴)') {
         filteredScanned = filteredScanned.filter(c => formatTag(context, c.text).includes('🔴'));
@@ -85,7 +91,6 @@ const getStandardItems = (context, folderName) => {
 
     let items = [];
     
-    // 🔥 FIX 2: Manual tasks pe "User Created" label add kar diya
     filteredManual.forEach(t => {
         const tagStr = formatTag(context, t.text);
         const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "edit", vscode.TreeItemCollapsibleState.None, "standardTask", true, t.text);
@@ -98,6 +103,10 @@ const getStandardItems = (context, folderName) => {
         const it = new DevFlowItem(tagStr ? `${tagStr} ${c.text}` : c.text, "go-to-file", vscode.TreeItemCollapsibleState.None, "standardTask", false, c.text);
         it.description = `${c.file} (Line ${c.line})`;
         it.parentLabel = folderName; 
+        
+        it.file = c.file;
+        it.line = c.line;
+
         it.command = { command: 'jargon.openFile', title: 'Open File', arguments: [c.file, c.line] };
         items.push(it);
     });
@@ -109,28 +118,78 @@ const getStandardItems = (context, folderName) => {
 };
 
 const getPriorityItems = (context) => {
-    const priorityTasks = context.globalState.get('priorityTasks') || [];
-    const fileComments = context.globalState.get('fileComments') || []; // Added to cross-reference
+    let priorityTasks = context.globalState.get('priorityTasks') || [];
+    const fileComments = context.globalState.get('fileComments') || []; 
+    let isUpdated = false;
 
-    return priorityTasks.map(t => {
-        const tagStr = formatTag(context, t.text);
-        const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "star", vscode.TreeItemCollapsibleState.None, "priorityTask", true, t.text);
-        it.iconPath = new vscode.ThemeIcon('star', new vscode.ThemeColor('charts.orange')); 
-        
-        // 🔥 FIX 3: Priority items ko unka click command aur file location wapas diya!
+    const items = priorityTasks.map(t => {
         if (t.isScanned) {
-            const scannedData = fileComments.find(c => c.text === t.text);
-            if (scannedData) {
-                it.description = `${scannedData.file} (Line ${scannedData.line})`;
-                it.command = { command: 'jargon.openFile', title: 'Open File', arguments: [scannedData.file, scannedData.line] };
+            let match = null;
+
+            if (t.file && t.line) {
+                // 🧠 THE SNIPER LOGIC
+                // Check 1: Kya us line par koi comment hai? (Chahe text edit ho gaya ho)
+                let exactLineMatch = fileComments.find(c => c.file === t.file && c.line === t.line);
+                
+                // Check 2: Kya wo same text upar/neeche shift ho gaya hai?
+                let exactTextMatches = fileComments.filter(c => c.file === t.file && c.text === t.text);
+
+                if (exactLineMatch) {
+                    // Agar line par comment mil gaya, aur text badla hua hai, toh update kar do!
+                    if (exactLineMatch.text !== t.text) {
+                        t.text = exactLineMatch.text; // //hello becomes //hell
+                        isUpdated = true;
+                    }
+                    match = exactLineMatch;
+                } 
+                else if (exactTextMatches.length > 0) {
+                    // Agar us line par comment nahi hai, par text kahin aur hai, toh closest line dhundo
+                    match = exactTextMatches.reduce((prev, curr) => {
+                        return Math.abs(curr.line - t.line) < Math.abs(prev.line - t.line) ? curr : prev;
+                    });
+                    if (match.line !== t.line) {
+                        t.line = match.line;
+                        isUpdated = true;
+                    }
+                }
             } else {
-                it.description = "(Scanned)";
+                // ⚠️ Legacy Data Fallback (Purane tasks jinki location nahi hai)
+                match = fileComments.find(c => c.text === t.text);
+                if (match) {
+                    t.file = match.file;
+                    t.line = match.line;
+                    isUpdated = true;
+                }
             }
+
+            const tagStr = formatTag(context, t.text);
+            const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "star", vscode.TreeItemCollapsibleState.None, "priorityTask", true, t.text);
+            it.iconPath = new vscode.ThemeIcon('star', new vscode.ThemeColor('charts.orange')); 
+            
+            it.file = t.file;
+            it.line = t.line;
+
+            if (match) {
+                it.description = `${match.file} (Line ${match.line})`;
+                it.command = { command: 'jargon.openFile', title: 'Open File', arguments: [match.file, match.line] };
+            } else {
+                it.description = "(Location Lost - Task moved or deleted)";
+            }
+            return it;
         } else {
+            const tagStr = formatTag(context, t.text);
+            const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "star", vscode.TreeItemCollapsibleState.None, "priorityTask", true, t.text);
+            it.iconPath = new vscode.ThemeIcon('star', new vscode.ThemeColor('charts.orange')); 
             it.description = "(User Created)";
+            return it;
         }
-        return it;
     });
+
+    if (isUpdated) {
+        context.globalState.update('priorityTasks', priorityTasks);
+    }
+
+    return items;
 };
 
 const getRecycleItems = (context) => {
@@ -139,7 +198,6 @@ const getRecycleItems = (context) => {
         const tagStr = formatTag(context, t.text);
         const displayLabel = tagStr ? `${tagStr} ${t.text}` : t.text;
         
-        // 🔥 FIX 4: Recycle Bin me bhi Pencil(edit) vs File(go-to-file) icon!
         const icon = t.isScanned ? "go-to-file" : "edit";
         const it = new DevFlowItem(displayLabel, icon, vscode.TreeItemCollapsibleState.None, "recycleTask", false, t.text);
         

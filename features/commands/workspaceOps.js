@@ -1,6 +1,10 @@
-// File: features/commands/workspaceOps.js
 const vscode = require('vscode');
-const { recordHistory } = require('./historyOps');
+const { logEvent } = require('../engine/logger');
+
+// Bulletproof import logic
+let recordHistory;
+try { recordHistory = require('./historyOps').recordHistory; } 
+catch(e) { recordHistory = require('../engine/historyOps').recordHistory; }
 
 function registerWorkspaceCommands(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.mainDelete', async () => {
@@ -12,15 +16,13 @@ function registerWorkspaceCommands(context, todoProvider) {
 
         if (!action) return;
 
-        // 🔥 MULTI-STEP VERIFICATION LOGIC
         if (action.label.includes('Total')) {
-            // Step 1: Explicit Warning Dialog
             const confirm1 = await vscode.window.showWarningMessage(
                 "🚨 DANGER: This will permanently wipe DevFlow-Suite data:\n\n" +
-                "1. All Virtual Folders & Manual Tasks (Your actual project files are 100% SAFE)\n" +
+                "1. All Virtual Folders & Manual Tasks\n" +
                 "2. All Priority Items\n" +
                 "3. The Entire Recycle Bin\n" +
-                "4. ALL Scanned Comments (e.g., // TODO) will be removed physically. (Only the comments will be deleted, NO actual code will be touched!)\n\n" +
+                "4. ALL Scanned Comments (e.g., // TODO) will be removed physically.\n\n" +
                 "Are you absolutely sure you want to proceed?",
                 { modal: true },
                 "Yes, Proceed to Final Step"
@@ -28,7 +30,6 @@ function registerWorkspaceCommands(context, todoProvider) {
 
             if (confirm1 !== "Yes, Proceed to Final Step") return;
 
-            // Step 2: Typing Verification (The GitHub Style Lock)
             const confirm2 = await vscode.window.showInputBox({
                 prompt: "TYPE 'WIPE OUT' TO CONFIRM PERMANENT DELETION.",
                 placeHolder: "WIPE OUT",
@@ -42,7 +43,6 @@ function registerWorkspaceCommands(context, todoProvider) {
                 return;
             }
         } else {
-            // Normal Recycle Warning
             const confirm = await vscode.window.showWarningMessage(
                 `Proceed with ${action.label}?`,
                 { modal: true },
@@ -51,7 +51,7 @@ function registerWorkspaceCommands(context, todoProvider) {
             if (confirm !== "Yes, Do it") return;
         }
 
-        recordHistory(context); // 📸 Snapshot taken
+        if (recordHistory) recordHistory(context); 
 
         let trash = context.globalState.get('trashData') || [];
         let manualTasks = context.globalState.get('manualTasks') || [];
@@ -79,7 +79,6 @@ function registerWorkspaceCommands(context, todoProvider) {
         };
 
         if (action.label.includes('Total')) {
-            // 🔥 NUCLEAR
             await deletePhysicalComments(fileComments);
             await context.globalState.update('manualTasks', []);
             await context.globalState.update('priorityTasks', []);
@@ -88,8 +87,8 @@ function registerWorkspaceCommands(context, todoProvider) {
             await context.globalState.update('trashData', []);
             await context.globalState.update('itemTags', {});
             vscode.window.showErrorMessage("DevFlow-Suite: Workspace completely wiped!");
+            logEvent(context, 'Wipe', "Permanently deleted ALL workspace data, folders, and code comments", null, null);
         } else {
-            // ♻️ RECYCLE
             const keepPriority = action.label.includes('Keep Priority');
             manualTasks.forEach(t => trash.push({ ...t, deletedFrom: t.folder, isScanned: false, isPriority: false }));
             if (!keepPriority) {
@@ -105,8 +104,10 @@ function registerWorkspaceCommands(context, todoProvider) {
             await context.globalState.update('fileComments', []);
             await context.globalState.update('trashData', trash);
             vscode.window.showInformationMessage("DevFlow-Suite: Items moved to Recycle Bin.");
+            logEvent(context, 'Delete', `Recycled everything ${keepPriority ? '(except Priority)' : ''}`, null, null);
         }
         todoProvider.refresh();
     }));
 }
+
 module.exports = { registerWorkspaceCommands };

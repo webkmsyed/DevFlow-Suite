@@ -1,16 +1,18 @@
 // File: features/engine/logger.js
 const vscode = require('vscode');
 
+// 🔄 Auto-Refresh Trigger for Timeline
 const triggerTimelineRefresh = () => {
-    // 🔄 Yeh hidden command Timeline ko batayegi ki naya data aaya hai!
     vscode.commands.executeCommand('jargon.internalRefreshTimeline');
 };
 
 const logEvent = async (context, action, details, file = null, line = null) => {
     let logs = context.globalState.get('auditLogs', []);
     const now = new Date();
-    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const dateString = now.toLocaleDateString();
+    
+    // 🔥 Bulletproof Time & Date Format
+    const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const dateString = now.toLocaleDateString('en-US');
 
     const newEvent = {
         id: Date.now(),
@@ -24,19 +26,20 @@ const logEvent = async (context, action, details, file = null, line = null) => {
     };
 
     logs.unshift(newEvent);
-    if (logs.length > 100) logs.pop();
+    if (logs.length > 100) logs.pop(); // Sirf last 100 logs yaad rakhega
     await context.globalState.update('auditLogs', logs);
     
-    triggerTimelineRefresh(); // 🔥 Auto-Sync Triggered!
+    triggerTimelineRefresh(); 
 };
 
+// ⭐ Star/Unstar Logic
 const toggleLogStar = async (context, logId) => {
     let logs = context.globalState.get('auditLogs', []);
     const logIndex = logs.findIndex(l => l.id === logId);
     if (logIndex > -1) {
         logs[logIndex].isStarred = !logs[logIndex].isStarred;
         await context.globalState.update('auditLogs', logs);
-        triggerTimelineRefresh(); // 🔥 Auto-Sync Triggered!
+        triggerTimelineRefresh();
     }
 };
 
