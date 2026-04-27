@@ -1,65 +1,28 @@
-# devflow-suite README
+# DevFlow Suite
+**The High-Performance Workspace for Software Architects.**
 
-This is the README for your extension "devflow-suite". After writing up a brief description, we recommend including the following sections.
+DevFlow Suite is a premium organizational layer for Visual Studio Code, designed to bridge the gap between source code and task management. It prioritizes minimalist aesthetics and high-speed developer experience (DX).
 
-## Features
+## Core Modules
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### 1. The Core Engine (Todo Explorer)
+A virtual organization system that allows developers to manage tasks without modifying the project's file structure.
+* **Virtual Folders:** Grouping logic for manual tasks and scanned comments.
+* **Smart Scanning:** Automated detection of source-code annotations (TODO/FIX).
+* **Priority Sniper:** A high-visibility sync engine for critical project milestones.
 
-For example if there is an image subfolder under your extension project workspace:
+### 2. The Timeline Engine (Activity Monitor)
+An automated audit log providing high-fidelity tracking of project development history.
+* **Temporal Grouping:** Logs structured by daily and historical sessions.
+* **Context-Aware Parsing:** Clean separation between task descriptions and system actions.
+* **Jump-to-Source:** Instant navigation from history logs directly to the relevant line of code.
 
-\!\[feature X\]\(images/feature-x.png\)
+## Strategy & Roadmap
+DevFlow Suite follows a modular evolution path to ensure zero-bloat performance.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+* **Phase A (Current):** Core Task Management & Activity Timeline.
+* **Phase B (Pulse Engine):** Productivity analytics, goal tracking, and focus metrics.
+* **Phase C (Integration):** Version control (Git) stream and deployment tracking.
 
 ---
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+*Developed by *Khishamuddin Syed* *
