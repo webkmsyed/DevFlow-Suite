@@ -1,40 +1,57 @@
 // File: features/engine/logger.js
 const vscode = require('vscode');
 
-// 🔄 Auto-Refresh Trigger for Timeline
+// 🔄 Auto-Refresh Trigger
 const triggerTimelineRefresh = () => {
     vscode.commands.executeCommand('jargon.internalRefreshTimeline');
 };
 
+// 🛡️ MUTEX LOCK: Taaki ek waqt mein ek hi log likha jaye
+let isLogging = false;
+const logQueue = [];
+
 const logEvent = async (context, action, details, file = null, line = null) => {
-    let logs = context.globalState.get('auditLogs', []);
-    const now = new Date();
-    
-    // 🔥 Bulletproof Time & Date Format
-    const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    const dateString = now.toLocaleDateString('en-US');
+    // Log details ko queue mein daalo
+    logQueue.push({ action, details, file, line, timestamp: Date.now() });
 
-    const newEvent = {
-        id: Date.now(),
-        date: dateString,
-        time: timeString,
-        action: action,
-        details: details,
-        file: file,
-        line: line,
-        isStarred: false
-    };
+    // Agar pehle se koi log process ho raha hai, toh ruk jao
+    if (isLogging) return;
 
-    logs.unshift(newEvent);
-    if (logs.length > 100) logs.pop(); // Sirf last 100 logs yaad rakhega
-    await context.globalState.update('auditLogs', logs);
+    isLogging = true;
     
+    while (logQueue.length > 0) {
+        const currentItem = logQueue.shift();
+        
+        // 🔥 FRESH FETCH: Har baar state se naye logs uthao
+        let logs = [...(context.globalState.get('auditLogs', []))];
+        
+        const now = new Date(currentItem.timestamp);
+        const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const dateString = now.toLocaleDateString('en-US');
+
+        const newEvent = {
+            id: currentItem.timestamp + Math.random(), // Unique ID fix
+            date: dateString,
+            time: timeString,
+            action: currentItem.action,
+            details: currentItem.details,
+            file: currentItem.file,
+            line: currentItem.line,
+            isStarred: false
+        };
+
+        logs.unshift(newEvent);
+        if (logs.length > 150) logs.pop(); // Thoda limit badha di hai
+        
+        await context.globalState.update('auditLogs', logs);
+    }
+
+    isLogging = false;
     triggerTimelineRefresh(); 
 };
 
-// ⭐ Star/Unstar Logic
 const toggleLogStar = async (context, logId) => {
-    let logs = context.globalState.get('auditLogs', []);
+    let logs = [...(context.globalState.get('auditLogs', []))];
     const logIndex = logs.findIndex(l => l.id === logId);
     if (logIndex > -1) {
         logs[logIndex].isStarred = !logs[logIndex].isStarred;

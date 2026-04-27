@@ -1,6 +1,7 @@
 // File: features/providers/treeRenderer.js
 const vscode = require('vscode');
 const DevFlowItem = require('../models/DevFlowItem');
+const { logEvent } = require('../engine/logger'); // 🔥 FIXED: Path check zaroor karna
 
 const formatTag = (context, taskText) => {
     const globalTags = context.globalState.get('itemTags') || {};
@@ -18,8 +19,6 @@ const getRoots = (context) => {
     const sortOrder = context.globalState.get('sortOrder', 'Default');
 
     const isInTrash = (text) => trashData.some(t => t.text === text);
-    
-    // 🔥 NAYA: Sirf EXACT File aur Line wala Priority se hide hoga!
     const isScannedInPriority = (c) => priorityTasks.some(p => p.isScanned && p.file === c.file && p.line === c.line);
     const isManualInPriority = (t) => priorityTasks.some(p => !p.isScanned && p.text === t.text && p.folder === t.folder);
 
@@ -60,8 +59,6 @@ const getStandardItems = (context, folderName) => {
     const sortOrder = context.globalState.get('sortOrder', 'Default');
 
     const isInTrash = (text) => trashData.some(t => t.text === text);
-    
-    // 🔥 NAYA: Sirf EXACT File aur Line wala hide hoga
     const isScannedInPriority = (c) => priorityTasks.some(p => p.isScanned && p.file === c.file && p.line === c.line);
     const isManualInPriority = (t) => priorityTasks.some(p => !p.isScanned && p.text === t.text && p.folder === t.folder);
 
@@ -103,10 +100,8 @@ const getStandardItems = (context, folderName) => {
         const it = new DevFlowItem(tagStr ? `${tagStr} ${c.text}` : c.text, "go-to-file", vscode.TreeItemCollapsibleState.None, "standardTask", false, c.text);
         it.description = `${c.file} (Line ${c.line})`;
         it.parentLabel = folderName; 
-        
         it.file = c.file;
         it.line = c.line;
-
         it.command = { command: 'jargon.openFile', title: 'Open File', arguments: [c.file, c.line] };
         items.push(it);
     });
@@ -125,55 +120,42 @@ const getPriorityItems = (context) => {
     const items = priorityTasks.map(t => {
         if (t.isScanned) {
             let match = null;
-
             if (t.file && t.line) {
-                // 🧠 THE SNIPER LOGIC
-                // Check 1: Kya us line par koi comment hai? (Chahe text edit ho gaya ho)
                 let exactLineMatch = fileComments.find(c => c.file === t.file && c.line === t.line);
-                
-                // Check 2: Kya wo same text upar/neeche shift ho gaya hai?
                 let exactTextMatches = fileComments.filter(c => c.file === t.file && c.text === t.text);
 
                 if (exactLineMatch) {
-                    // Agar line par comment mil gaya, aur text badla hua hai, toh update kar do!
                     if (exactLineMatch.text !== t.text) {
-                        t.text = exactLineMatch.text; // //hello becomes //hell
+                        t.text = exactLineMatch.text;
                         isUpdated = true;
+                        // 🔥 CCTV: Update Log
+                        logEvent(context, 'Update', `'${t.text}' 'Priority Sync ➔ Updated Line ${t.line}'`, t.file, t.line);
                     }
                     match = exactLineMatch;
                 } 
                 else if (exactTextMatches.length > 0) {
-                    // Agar us line par comment nahi hai, par text kahin aur hai, toh closest line dhundo
-                    match = exactTextMatches.reduce((prev, curr) => {
-                        return Math.abs(curr.line - t.line) < Math.abs(prev.line - t.line) ? curr : prev;
-                    });
+                    match = exactTextMatches.reduce((prev, curr) => Math.abs(curr.line - t.line) < Math.abs(prev.line - t.line) ? curr : prev);
                     if (match.line !== t.line) {
                         t.line = match.line;
                         isUpdated = true;
+                        logEvent(context, 'Update', `'${t.text}' 'Priority Sync ➔ Shifted to Line ${t.line}'`, t.file, t.line);
                     }
                 }
             } else {
-                // ⚠️ Legacy Data Fallback (Purane tasks jinki location nahi hai)
                 match = fileComments.find(c => c.text === t.text);
-                if (match) {
-                    t.file = match.file;
-                    t.line = match.line;
-                    isUpdated = true;
-                }
+                if (match) { t.file = match.file; t.line = match.line; isUpdated = true; }
             }
 
             const tagStr = formatTag(context, t.text);
             const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "star", vscode.TreeItemCollapsibleState.None, "priorityTask", true, t.text);
             it.iconPath = new vscode.ThemeIcon('star', new vscode.ThemeColor('charts.orange')); 
-            
-            it.file = t.file;
-            it.line = t.line;
+            it.file = t.file; it.line = t.line;
 
             if (match) {
                 it.description = `${match.file} (Line ${match.line})`;
                 it.command = { command: 'jargon.openFile', title: 'Open File', arguments: [match.file, match.line] };
             } else {
-                it.description = "(Location Lost - Task moved or deleted)";
+                it.description = "(Location Lost)";
             }
             return it;
         } else {
@@ -185,10 +167,7 @@ const getPriorityItems = (context) => {
         }
     });
 
-    if (isUpdated) {
-        context.globalState.update('priorityTasks', priorityTasks);
-    }
-
+    if (isUpdated) context.globalState.update('priorityTasks', priorityTasks);
     return items;
 };
 
@@ -196,11 +175,8 @@ const getRecycleItems = (context) => {
     const trashData = context.globalState.get('trashData') || [];
     return trashData.map(t => {
         const tagStr = formatTag(context, t.text);
-        const displayLabel = tagStr ? `${tagStr} ${t.text}` : t.text;
-        
         const icon = t.isScanned ? "go-to-file" : "edit";
-        const it = new DevFlowItem(displayLabel, icon, vscode.TreeItemCollapsibleState.None, "recycleTask", false, t.text);
-        
+        const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, icon, vscode.TreeItemCollapsibleState.None, "recycleTask", false, t.text);
         it.description = t.description || `(from: ${t.deletedFrom})`;
         return it;
     });

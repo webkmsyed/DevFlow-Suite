@@ -1,3 +1,4 @@
+// File: features/commands/workspaceOps.js
 const vscode = require('vscode');
 const { logEvent } = require('../engine/logger');
 
@@ -16,6 +17,7 @@ function registerWorkspaceCommands(context, todoProvider) {
 
         if (!action) return;
 
+        // --- Confirmation Dialogs ---
         if (action.label.includes('Total')) {
             const confirm1 = await vscode.window.showWarningMessage(
                 "🚨 DANGER: This will permanently wipe DevFlow-Suite data:\n\n" +
@@ -78,6 +80,7 @@ function registerWorkspaceCommands(context, todoProvider) {
             }
         };
 
+        // --- Execute Actions ---
         if (action.label.includes('Total')) {
             await deletePhysicalComments(fileComments);
             await context.globalState.update('manualTasks', []);
@@ -86,26 +89,40 @@ function registerWorkspaceCommands(context, todoProvider) {
             await context.globalState.update('fileComments', []);
             await context.globalState.update('trashData', []);
             await context.globalState.update('itemTags', {});
+            
             vscode.window.showErrorMessage("DevFlow-Suite: Workspace completely wiped!");
-            logEvent(context, 'Wipe', "Permanently deleted ALL workspace data, folders, and code comments", null, null);
+            
+            // 🔥 PROFESSIONAL LOG: 'Full System' 'Wipe ➔ Total Deletion'
+            logEvent(context, 'Wipe', `'Full Workspace' 'System ➔ Permanently Deleted'`, null, null);
+
         } else {
             const keepPriority = action.label.includes('Keep Priority');
+            
             manualTasks.forEach(t => trash.push({ ...t, deletedFrom: t.folder, isScanned: false, isPriority: false }));
+            
             if (!keepPriority) {
                 priorityTasks.forEach(p => trash.push({ ...p, deletedFrom: 'Priority', isScanned: p.isScanned, isPriority: true }));
                 await context.globalState.update('priorityTasks', []);
             }
+            
             fileComments.forEach(c => {
                 trash.push({ id: Date.now() + Math.random(), text: c.text, deletedFrom: c.target, isScanned: true, originalLine: c.line, originalFile: c.file, isPriority: priorityTasks.some(p => p.text === c.text) });
             });
+
             await deletePhysicalComments(fileComments);
             await context.globalState.update('manualTasks', []);
             await context.globalState.update('userFolders', []);
             await context.globalState.update('fileComments', []);
             await context.globalState.update('trashData', trash);
+            
             vscode.window.showInformationMessage("DevFlow-Suite: Items moved to Recycle Bin.");
-            logEvent(context, 'Delete', `Recycled everything ${keepPriority ? '(except Priority)' : ''}`, null, null);
+
+            // 🔥 PROFESSIONAL LOG: 'Scope' 'Source ➔ Recycle Bin'
+            const scope = keepPriority ? "Active Tasks" : "All Items";
+            const detailStr = keepPriority ? "Workspace ➔ Recycle Bin (Kept Priority)" : "Workspace ➔ Recycle Bin";
+            logEvent(context, 'Delete', `'${scope}' '${detailStr}'`, null, null);
         }
+
         todoProvider.refresh();
     }));
 }

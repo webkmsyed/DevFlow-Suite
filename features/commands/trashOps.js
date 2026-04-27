@@ -1,17 +1,18 @@
+// File: features/commands/trashOps.js
 const vscode = require('vscode');
 const { logEvent } = require('../engine/logger');
 
 // Bulletproof import logic
 let recordHistory;
-try { recordHistory = require('./historyOps').recordHistory; } 
-catch(e) { recordHistory = require('../engine/historyOps').recordHistory; }
+try { recordHistory = require('./historyOps').recordHistory; }
+catch (e) { recordHistory = require('../engine/historyOps').recordHistory; }
 
 function registerTrashCommands(context, todoProvider) {
     const register = (cmd, handler) => context.subscriptions.push(vscode.commands.registerCommand(cmd, handler));
 
     register('jargon.taskDelTemp', async (node) => {
         if (!node) return;
-        if (recordHistory) recordHistory(context); 
+        if (recordHistory) recordHistory(context);
 
         let trash = context.globalState.get('trashData', []);
         let pri = context.globalState.get('priorityTasks', []);
@@ -47,12 +48,15 @@ function registerTrashCommands(context, todoProvider) {
         trash.push(newItem);
         await context.globalState.update('trashData', trash);
         todoProvider.refresh();
-        logEvent(context, 'Delete', `Moved task '${node.originalText}' to Recycle Bin`, null, null);
+
+        // 🔥 PROFESSIONAL LOG: 'Task Text' 'Source ➔ Destination'
+        const source = node.parentLabel || "General Workspace";
+        logEvent(context, 'Delete', `'${node.originalText}' '${source} ➔ Recycle Bin'`, node.file, node.line);
     });
 
     register('jargon.taskRestore', async (node) => {
         if (!node) return;
-        if (recordHistory) recordHistory(context); 
+        if (recordHistory) recordHistory(context);
 
         let trash = context.globalState.get('trashData', []);
         const itemIndex = trash.findIndex(t => t.text === node.originalText);
@@ -87,26 +91,33 @@ function registerTrashCommands(context, todoProvider) {
             trash.splice(itemIndex, 1);
             await context.globalState.update('trashData', trash);
             todoProvider.refresh();
-            logEvent(context, 'Restore', `Restored '${item.text}' to '${item.deletedFrom}'`, restoredFile, restoredLine);
+
+            // 🔥 PROFESSIONAL LOG: 'Text' 'Recycle ➔ Destination'
+            logEvent(context, 'Restore', `'${item.text}' 'Recycle Bin ➔ ${item.deletedFrom}'`, restoredFile, restoredLine);
+            
         }
     });
 
     register('jargon.taskDelPerm', async (node) => {
         if (!node) return;
-        if (recordHistory) recordHistory(context); 
+        if (recordHistory) recordHistory(context);
         let trash = context.globalState.get('trashData', []);
         trash = trash.filter(t => t.text !== node.originalText);
         await context.globalState.update('trashData', trash);
         todoProvider.refresh();
-        logEvent(context, 'Delete', `Permanently deleted task '${node.originalText}'`, null, null);
+        
+        // 🔥 PROFESSIONAL LOG: 'Text' 'X ➔ Y'
+        logEvent(context, 'Wipe', `'${node.originalText}' 'Recycle Bin ➔ Permanently Deleted'`, null, null);
     });
 
     register('jargon.recDeleteAll', async () => {
-        if (recordHistory) recordHistory(context); 
+        if (recordHistory) recordHistory(context);
         await context.globalState.update('trashData', []);
         todoProvider.refresh();
         vscode.window.showInformationMessage("Recycle bin emptied.");
-        logEvent(context, 'Delete', `Emptied the Recycle Bin completely`, null, null);
+
+        // 🔥 PROFESSIONAL LOG: General Action
+        logEvent(context, 'Delete', `'Recycle Bin' 'Cleaning ➔ Emptied Completely'`, null, null);
     });
 }
 

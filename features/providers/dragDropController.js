@@ -1,7 +1,7 @@
 // File: features/providers/dragDropController.js
 const vscode = require('vscode');
 const { recordHistory } = require('../commands/historyOps');
-const { logEvent } = require('../engine/logger'); 
+const { logEvent } = require('../engine/logger');
 
 class DragDropController {
     constructor(context, todoProvider) {
@@ -19,9 +19,9 @@ class DragDropController {
         const transferItem = dataTransfer.get('application/vnd.code.tree.devflow');
         if (!transferItem || !target) return;
 
-        const sourceItem = transferItem.value; 
+        const sourceItem = transferItem.value;
         const sourceText = sourceItem.originalText || sourceItem.label;
-        
+
         let targetLabel = target.originalText || target.label;
         let targetContext = target.contextValue;
 
@@ -38,11 +38,11 @@ class DragDropController {
                 let fileComments = this.context.globalState.get('fileComments') || [];
                 let foundManual = manualTasks.find(t => t.text === targetLabel);
                 let foundScanned = fileComments.find(c => c.text === targetLabel);
-                
+
                 if (foundManual) targetLabel = foundManual.folder;
                 else if (foundScanned) targetLabel = foundScanned.target;
                 else targetLabel = "General Workspace";
-                
+
                 targetContext = "standardTab";
             }
         }
@@ -58,8 +58,8 @@ class DragDropController {
         let manualTasks = this.context.globalState.get('manualTasks') || [];
         let priorityTasks = this.context.globalState.get('priorityTasks') || [];
         let fileComments = this.context.globalState.get('fileComments') || [];
-        
-        // 🔥 FIX 1: Solid Check (Memory mein dhoondhega, string mein nahi)
+
+        // 🔥 Solid Check for Scanned vs Manual
         const isScanned = fileComments.some(c => c.text === sourceText);
 
         if (targetContext !== 'priorityTab') {
@@ -68,7 +68,13 @@ class DragDropController {
 
         if (targetContext === 'priorityTab') {
             if (!priorityTasks.some(p => p.text === sourceText)) {
-                priorityTasks.push({ text: sourceText, isScanned: isScanned });
+                // Priority mein dalte waqt location bhi save kar rahe hain for Smart Sync
+                priorityTasks.push({ 
+                    text: sourceText, 
+                    isScanned: isScanned,
+                    file: sourceItem.file || null,
+                    line: sourceItem.line || null
+                });
             }
         } else {
             if (isScanned) {
@@ -89,8 +95,15 @@ class DragDropController {
         await this.context.globalState.update('priorityTasks', priorityTasks);
         await this.context.globalState.update('manualTasks', manualTasks);
         await this.context.globalState.update('fileComments', fileComments);
-        logEvent(this.context, 'Move', `Moved item '${sourceText}' to '${targetLabel}'`);
-        
+
+        // ✅ Professional Audit Logging
+        const taskFile = sourceItem.file || null;
+        const taskLine = sourceItem.line || null;
+        const sourceLoc = sourceItem.parentLabel || "General Workspace";
+
+        // Format: 'Comment' 'Source ➔ Destination'
+        logEvent(this.context, 'Move', `'${sourceText}' '${sourceLoc} ➔ ${targetLabel}'`, taskFile, taskLine);
+
         this.todoProvider.refresh();
     }
 }
