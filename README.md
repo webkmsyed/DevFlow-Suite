@@ -25,4 +25,4 @@ DevFlow Suite follows a modular evolution path to ensure zero-bloat performance.
 * **Phase C (Integration):** Version control (Git) stream and deployment tracking.
 
 ---
-*Developed by *Khishamuddin Syed* *
+> Developed by **Khishamuddin Syed** from `webkmsyed.com`
