@@ -20,34 +20,29 @@ class DragDropController {
         if (!transferItem || !target) return;
 
         const sourceItem = transferItem.value;
+        // Identity Fix: Use unique ID or file:line for dragging
+        const sourceId = sourceItem.id || `${sourceItem.file}:${sourceItem.line}`;
         const sourceText = sourceItem.originalText || sourceItem.label;
 
         let targetLabel = target.originalText || target.label;
         let targetContext = target.contextValue;
 
-        // 🧠 Intelligent Target Resolution
+        // --- Target Resolution ---
         if (!['standardTab', 'priorityTab', 'recycleTab'].includes(targetContext)) {
             if (targetContext === 'priorityTask') {
-                targetLabel = "Priority Items";
-                targetContext = "priorityTab";
+                targetLabel = "Priority Items"; targetContext = "priorityTab";
             } else if (targetContext === 'recycleTask') {
-                targetLabel = "Recycle Bin";
-                targetContext = "recycleTab";
+                targetLabel = "Recycle Bin"; targetContext = "recycleTab";
             } else {
-                let manualTasks = this.context.globalState.get('manualTasks') || [];
-                let fileComments = this.context.globalState.get('fileComments') || [];
-                let foundManual = manualTasks.find(t => t.text === targetLabel);
-                let foundScanned = fileComments.find(c => c.text === targetLabel);
-
-                if (foundManual) targetLabel = foundManual.folder;
-                else if (foundScanned) targetLabel = foundScanned.target;
-                else targetLabel = "General Workspace";
-
+                targetLabel = target.parentLabel || target.folder || "General Workspace";
                 targetContext = "standardTab";
             }
         }
 
+        // Prevent dragging tabs into tabs
         if (['standardTab', 'priorityTab', 'recycleTab'].includes(sourceItem.contextValue)) return;
+        
+        // Block Drag-to-Recycle (Use Delete Button for safety)
         if (targetContext === 'recycleTab' || targetLabel === 'Recycle Bin') {
             vscode.window.showInformationMessage("Use the Delete button to move items to Recycle Bin.");
             return;
@@ -55,21 +50,22 @@ class DragDropController {
 
         recordHistory(this.context);
 
-        let manualTasks = this.context.globalState.get('manualTasks') || [];
-        let priorityTasks = this.context.globalState.get('priorityTasks') || [];
-        let fileComments = this.context.globalState.get('fileComments') || [];
+        let manualTasks = this.context.globalState.get('manualTasks', []) || [];
+        let priorityTasks = this.context.globalState.get('priorityTasks', []) || [];
+        let fileComments = this.context.globalState.get('fileComments', []) || [];
 
-        // 🔥 Solid Check for Scanned vs Manual
-        const isScanned = fileComments.some(c => c.text === sourceText);
+        const isScanned = !!sourceItem.file;
 
+        // 1. Logic: Remove from Priority if moving to another folder (Non-copy move)
         if (targetContext !== 'priorityTab') {
-            priorityTasks = priorityTasks.filter(p => p.text !== sourceText);
+            priorityTasks = priorityTasks.filter(p => (p.id || `${p.file}:${p.line}`) !== sourceId);
         }
 
+        // 2. Logic: Handle Destination
         if (targetContext === 'priorityTab') {
-            if (!priorityTasks.some(p => p.text === sourceText)) {
-                // Priority mein dalte waqt location bhi save kar rahe hain for Smart Sync
+            if (!priorityTasks.some(p => (p.id || `${p.file}:${p.line}`) === sourceId)) {
                 priorityTasks.push({ 
+                    id: sourceItem.id || null,
                     text: sourceText, 
                     isScanned: isScanned,
                     file: sourceItem.file || null,
@@ -78,17 +74,11 @@ class DragDropController {
             }
         } else {
             if (isScanned) {
-                const commentIdx = fileComments.findIndex(c => c.text === sourceText);
-                if (commentIdx > -1) {
-                    fileComments[commentIdx].target = targetLabel;
-                }
+                const commentIdx = fileComments.findIndex(c => `${c.file}:${c.line}` === sourceId);
+                if (commentIdx > -1) fileComments[commentIdx].target = targetLabel;
             } else {
-                const taskIdx = manualTasks.findIndex(t => t.text === sourceText);
-                if (taskIdx > -1) {
-                    manualTasks[taskIdx].folder = targetLabel;
-                } else {
-                    manualTasks.push({ id: Date.now(), text: sourceText, folder: targetLabel });
-                }
+                const taskIdx = manualTasks.findIndex(t => String(t.id) === String(sourceItem.id));
+                if (taskIdx > -1) manualTasks[taskIdx].folder = targetLabel;
             }
         }
 
@@ -96,14 +86,7 @@ class DragDropController {
         await this.context.globalState.update('manualTasks', manualTasks);
         await this.context.globalState.update('fileComments', fileComments);
 
-        // ✅ Professional Audit Logging
-        const taskFile = sourceItem.file || null;
-        const taskLine = sourceItem.line || null;
-        const sourceLoc = sourceItem.parentLabel || "General Workspace";
-
-        // Format: 'Comment' 'Source ➔ Destination'
-        logEvent(this.context, 'Move', `'${sourceText}' '${sourceLoc} ➔ ${targetLabel}'`, taskFile, taskLine);
-
+        logEvent(this.context, 'Move', `'${sourceText}' '${sourceItem.parentLabel || "General Workspace"} ➔ ${targetLabel}'`, sourceItem.file, sourceItem.line);
         this.todoProvider.refresh();
     }
 }
