@@ -1,7 +1,7 @@
 // File: features/subTabs/priority/priorityTabIndex.js
 const { registerPriorityTabExport } = require('./priorityTabExport');
 const { registerPriorityTabClear } = require('./priorityTabClear');
-const { registerPriorityTabAddAll } = require('./priorityTabAddAll');
+const { registerPriorityTabAddAll } = require('./priorityTabAddAll'); // 👈 Ye check karein
 
 function registerPriorityTabOps(context, todoProvider) {
     registerPriorityTabExport(context);
