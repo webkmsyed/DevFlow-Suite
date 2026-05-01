@@ -52,7 +52,7 @@
         "icon": "$(trash)"
       },
       {
-        "command": "jargon.mainFilter",
+        "command": "jargon.mainClearFilters",
         "title": "Filter",
         "icon": "$(filter)"
       },
@@ -195,11 +195,30 @@
         "command": "jargon.taskDelPerm",
         "title": "Delete Permanent",
         "icon": "$(close)"
+      },
+      {
+        "command": "jargon.subFolderRename",
+        "title": "Rename Folder",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "jargon.subFolderPriority",
+        "title": "Star Whole Folder",
+        "icon": "$(star-full)"
+      },
+      {
+        "command": "jargon.subFolderExport",
+        "title": "Export Folder Report",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "jargon.subTaskSort",
+        "title": "Quick Sort Tab",
+        "icon": "$(list-ordered)"
       }
     ],
     "menus": {
       "view/title": [
-        
         {
           "command": "jargon.mainFolder",
           "when": "view == todo-explorer",
@@ -221,7 +240,7 @@
           "group": "navigation@5"
         },
         {
-          "command": "jargon.mainFilter",
+          "command": "jargon.mainClearFilters",
           "when": "view == todo-explorer",
           "group": "navigation@6"
         },
@@ -386,6 +405,21 @@
           "command": "jargon.taskTag",
           "when": "view == todo-explorer && viewItem == recycleTask",
           "group": "inline@4"
+        },
+        {
+          "command": "jargon.subFolderRename",
+          "when": "view == todo-explorer && viewItem == standardTab",
+          "group": "inline@8"
+        },
+        {
+          "command": "jargon.subFolderPriority",
+          "when": "view == todo-explorer && viewItem == standardTab",
+          "group": "inline@9"
+        },
+        {
+          "command": "jargon.subTaskSort",
+          "when": "view == todo-explorer && viewItem == standardTab",
+          "group": "inline@10"
         }
       ]
     }

@@ -1,7 +1,7 @@
 // File: features/providers/treeRenderer.js
 const vscode = require('vscode');
 const DevFlowItem = require('../models/DevFlowItem');
-const { logEvent } = require('../engine/logger'); // 🔥 FIXED: Path check zaroor karna
+const { logEvent } = require('../engine/logger'); 
 
 const formatTag = (context, taskText) => {
     const globalTags = context.globalState.get('itemTags') || {};
@@ -15,16 +15,17 @@ const getRoots = (context) => {
     const manualTasks = context.globalState.get('manualTasks') || [];
     const fileComments = context.globalState.get('fileComments') || [];
     const trashData = context.globalState.get('trashData') || [];
-    const priorityTasks = context.globalState.get('priorityTasks') || [];
     const sortOrder = context.globalState.get('sortOrder', 'Default');
 
-    const isInTrash = (text) => trashData.some(t => t.text === text);
-    const isScannedInPriority = (c) => priorityTasks.some(p => p.isScanned && p.file === c.file && p.line === c.line);
-    const isManualInPriority = (t) => priorityTasks.some(p => !p.isScanned && p.text === t.text && p.folder === t.folder);
+    // Identity-based Trash Check: $ID_{scanned} = file:line$ | $ID_{manual} = id$
+    const isInTrash = (item, isScanned) => trashData.some(t => 
+        isScanned ? (t.originalFile === item.file && t.originalLine === item.line) : (t.id === item.id)
+    );
 
     let folderItems = userFolders.map(f => {
-        const manualCount = manualTasks.filter(t => t.folder === f && !isInTrash(t.text) && !isManualInPriority(t)).length;
-        const scannedCount = fileComments.filter(c => c.target === f && !isInTrash(c.text) && !isScannedInPriority(c)).length;
+        // Items remain in count even if they are in Priority[cite: 1]
+        const manualCount = manualTasks.filter(t => t.folder === f && !isInTrash(t, false)).length;
+        const scannedCount = fileComments.filter(c => c.target === f && !isInTrash(c, true)).length;
         const taskCount = manualCount + scannedCount;
 
         const item = new DevFlowItem(f, "folder-active", vscode.TreeItemCollapsibleState.Expanded, "standardTab", true, f);
@@ -49,7 +50,6 @@ const getRoots = (context) => {
 
 const getStandardItems = (context, folderName) => {
     const trashData = context.globalState.get('trashData') || [];
-    const priorityTasks = context.globalState.get('priorityTasks') || [];
     const fileComments = context.globalState.get('fileComments') || [];
     const manualTasks = context.globalState.get('manualTasks') || [];
     
@@ -58,12 +58,13 @@ const getStandardItems = (context, folderName) => {
     const activeTagFilter = context.globalState.get('activeTagFilter', '');
     const sortOrder = context.globalState.get('sortOrder', 'Default');
 
-    const isInTrash = (text) => trashData.some(t => t.text === text);
-    const isScannedInPriority = (c) => priorityTasks.some(p => p.isScanned && p.file === c.file && p.line === c.line);
-    const isManualInPriority = (t) => priorityTasks.some(p => !p.isScanned && p.text === t.text && p.folder === t.folder);
+    const isInTrash = (item, isScanned) => trashData.some(t => 
+        isScanned ? (t.originalFile === item.file && t.originalLine === item.line) : (t.id === item.id)
+    );
 
-    let filteredScanned = activeFilter === 'Manual Tasks Only' ? [] : fileComments.filter(c => c.target === (folderName === "General Workspace" ? "General Workspace" : folderName)).filter(c => !isInTrash(c.text) && !isScannedInPriority(c));
-    let filteredManual = activeFilter === 'Scanned Comments Only' ? [] : manualTasks.filter(t => t.folder === folderName).filter(t => !isInTrash(t.text) && !isManualInPriority(t));
+    // FIXED: Items stay in folder even if they are in Priority[cite: 1]
+    let filteredScanned = activeFilter === 'Manual Tasks Only' ? [] : fileComments.filter(c => c.target === (folderName === "General Workspace" ? "General Workspace" : folderName)).filter(c => !isInTrash(c, true));
+    let filteredManual = activeFilter === 'Scanned Comments Only' ? [] : manualTasks.filter(t => t.folder === folderName).filter(t => !isInTrash(t, false));
 
     if (activeFilter === 'Bugs Only (🔴)') {
         filteredScanned = filteredScanned.filter(c => formatTag(context, c.text).includes('🔴'));
@@ -74,10 +75,7 @@ const getStandardItems = (context, folderName) => {
         filteredManual = filteredManual.filter(t => formatTag(context, t.text) === "");
     }
     if (activeFilter === 'Specific Tag' && activeTagFilter) {
-        const getRawTag = (txt) => {
-            const tags = context.globalState.get('itemTags') || {};
-            return tags[txt] ? tags[txt].trim() : "";
-        };
+        const getRawTag = (txt) => (context.globalState.get('itemTags') || {})[txt]?.trim() || "";
         filteredScanned = filteredScanned.filter(c => getRawTag(c.text) === activeTagFilter);
         filteredManual = filteredManual.filter(t => getRawTag(t.text) === activeTagFilter);
     }
@@ -91,6 +89,7 @@ const getStandardItems = (context, folderName) => {
     filteredManual.forEach(t => {
         const tagStr = formatTag(context, t.text);
         const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "edit", vscode.TreeItemCollapsibleState.None, "standardTask", true, t.text);
+        it.id = String(t.id); // Identity Fix[cite: 1]
         it.description = "(User Created)";
         items.push(it);
     });
@@ -98,6 +97,7 @@ const getStandardItems = (context, folderName) => {
     filteredScanned.forEach(c => {
         const tagStr = formatTag(context, c.text);
         const it = new DevFlowItem(tagStr ? `${tagStr} ${c.text}` : c.text, "go-to-file", vscode.TreeItemCollapsibleState.None, "standardTask", false, c.text);
+        it.id = `${c.file}:${c.line}`; // Identity Fix (Line 6 vs Line 7)[cite: 1]
         it.description = `${c.file} (Line ${c.line})`;
         it.parentLabel = folderName; 
         it.file = c.file;
@@ -119,35 +119,18 @@ const getPriorityItems = (context) => {
 
     const items = priorityTasks.map(t => {
         if (t.isScanned) {
-            let match = null;
-            if (t.file && t.line) {
-                let exactLineMatch = fileComments.find(c => c.file === t.file && c.line === t.line);
-                let exactTextMatches = fileComments.filter(c => c.file === t.file && c.text === t.text);
-
-                if (exactLineMatch) {
-                    if (exactLineMatch.text !== t.text) {
-                        t.text = exactLineMatch.text;
-                        isUpdated = true;
-                        // 🔥 CCTV: Update Log
-                        logEvent(context, 'Update', `'${t.text}' 'Priority Sync ➔ Updated Line ${t.line}'`, t.file, t.line);
-                    }
-                    match = exactLineMatch;
-                } 
-                else if (exactTextMatches.length > 0) {
-                    match = exactTextMatches.reduce((prev, curr) => Math.abs(curr.line - t.line) < Math.abs(prev.line - t.line) ? curr : prev);
-                    if (match.line !== t.line) {
-                        t.line = match.line;
-                        isUpdated = true;
-                        logEvent(context, 'Update', `'${t.text}' 'Priority Sync ➔ Shifted to Line ${t.line}'`, t.file, t.line);
-                    }
-                }
-            } else {
-                match = fileComments.find(c => c.text === t.text);
-                if (match) { t.file = match.file; t.line = match.line; isUpdated = true; }
+            // Priority identity check using file and line[cite: 1]
+            let match = fileComments.find(c => c.file === t.file && c.line === t.line);
+            
+            if (match && (match.text !== t.text)) {
+                t.text = match.text;
+                isUpdated = true;
+                logEvent(context, 'Update', `'${t.text}' 'Priority Sync ➔ Updated'`, t.file, t.line);
             }
 
             const tagStr = formatTag(context, t.text);
             const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "star", vscode.TreeItemCollapsibleState.None, "priorityTask", true, t.text);
+            it.id = `pri:${t.file}:${t.line}`; 
             it.iconPath = new vscode.ThemeIcon('star', new vscode.ThemeColor('charts.orange')); 
             it.file = t.file; it.line = t.line;
 
@@ -161,6 +144,7 @@ const getPriorityItems = (context) => {
         } else {
             const tagStr = formatTag(context, t.text);
             const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, "star", vscode.TreeItemCollapsibleState.None, "priorityTask", true, t.text);
+            it.id = `pri:${t.id}`;
             it.iconPath = new vscode.ThemeIcon('star', new vscode.ThemeColor('charts.orange')); 
             it.description = "(User Created)";
             return it;
@@ -177,6 +161,8 @@ const getRecycleItems = (context) => {
         const tagStr = formatTag(context, t.text);
         const icon = t.isScanned ? "go-to-file" : "edit";
         const it = new DevFlowItem(tagStr ? `${tagStr} ${t.text}` : t.text, icon, vscode.TreeItemCollapsibleState.None, "recycleTask", false, t.text);
+        // Unique ID for items in Trash[cite: 1]
+        it.id = t.isScanned ? `trash:${t.originalFile}:${t.originalLine}` : `trash:${t.id}`;
         it.description = t.description || `(from: ${t.deletedFrom})`;
         return it;
     });

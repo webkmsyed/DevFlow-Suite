@@ -2,52 +2,54 @@
 const vscode = require('vscode');
 
 function registerPriorityCommands(context, todoProvider) {
-    const register = (cmd, handler) => context.subscriptions.push(vscode.commands.registerCommand(cmd, handler));
-
-    // 1. Save to Priority
-
-    register('jargon.taskSavePri', async (node) => {
+    
+    // --- 1. SAVE TO PRIORITY (Main Button) ---
+    vscode.commands.registerCommand('jargon.taskSavePri', async (node) => {
         if (!node) return;
-        
-        // Agar history/logger import kiya hai toh unhe yahan call karein
-        // if(recordHistory) recordHistory(context); 
 
         let pri = context.globalState.get('priorityTasks', []);
         
-        // Pura exact check (Same file + Same Line + Same Text)
-        const exists = pri.some(p => p.text === node.originalText && p.file === node.file && p.line === node.line);
+        // Identity Check: ID logic for Manual tasks OR File:Line for Scanned tasks
+        const nodeId = node.id || `${node.file}:${node.line}`;
+        
+        const exists = pri.some(p => {
+            const priId = p.id || `${p.file}:${p.line}`;
+            return priId === nodeId;
+        });
 
         if (!exists) {
             pri.push({ 
+                id: node.id || null, // Manual ID
                 text: node.originalText, 
                 isScanned: node.contextValue === 'standardTask',
-                file: node.file, // 🔥 Naya: File Save kiya
-                line: node.line  // 🔥 Naya: Line Save kiya
+                file: node.file || null,
+                line: node.line || null
             });
             await context.globalState.update('priorityTasks', pri);
             todoProvider.refresh();
-            
-            // 🔥 Naya: CCTV Log
-            // logEvent(context, 'Priority', `Saved '${node.originalText}' to Priority`, node.file, node.line);
+            vscode.window.showInformationMessage("Moved to Priority Workspace.");
         } else {
-            vscode.window.showInformationMessage("This specific item is already in Priority!");
+            vscode.window.showWarningMessage("Item already exists in Priority.");
         }
     });
 
-    // 2. Remove from Priority
-    register('jargon.taskRemovePri', async (node) => {
+    // --- 2. REMOVE FROM PRIORITY ---
+    vscode.commands.registerCommand('jargon.taskRemovePri', async (node) => {
         if (!node) return;
         let priority = context.globalState.get('priorityTasks', []);
-        priority = priority.filter(t => t.text !== node.originalText);
+        
+        const nodeId = node.id || `${node.file}:${node.line}`;
+        priority = priority.filter(p => (p.id || `${p.file}:${p.line}`) !== nodeId);
+        
         await context.globalState.update('priorityTasks', priority);
         todoProvider.refresh();
     });
 
-    // 3. Remove All Priorities (Clear Tab)
-    register('jargon.priRemoveAll', async () => {
+    // --- 3. CLEAR ENTIRE TAB ---
+    vscode.commands.registerCommand('jargon.priRemoveAll', async () => {
         await context.globalState.update('priorityTasks', []);
         todoProvider.refresh();
-        vscode.window.showInformationMessage("All priorities cleared.");
+        vscode.window.showInformationMessage("Priority Tab Cleared.");
     });
 }
 

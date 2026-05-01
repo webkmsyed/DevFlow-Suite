@@ -2,7 +2,7 @@
 const vscode = require('vscode');
 
 function registerFilter(context, todoProvider) {
-    context.subscriptions.push(vscode.commands.registerCommand('jargon.mainFilter', async () => {
+    context.subscriptions.push(vscode.commands.registerCommand('jargon.mainClearFilters', async () => {
         const choice = await vscode.window.showQuickPick([
             'All Items (Default)', 
             'Manual Tasks Only', 
