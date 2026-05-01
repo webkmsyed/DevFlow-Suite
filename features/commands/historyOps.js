@@ -1,13 +1,16 @@
 // File: features/commands/historyOps.js
 const vscode = require('vscode');
-const { logEvent } = require('../engine/logger');
 
 let undoStack = [];
 let redoStack = [];
-const MAX_HISTORY = 20; // Increased for better UX
+const MAX_HISTORY = 20;
 
+// Helper: Deep Clone taaki original state kharab na ho
 const clone = (obj) => JSON.parse(JSON.stringify(obj));
 
+/**
+ * Action hone se pehle state save karein
+ */
 const recordHistory = (context) => {
     const snapshot = {
         manualTasks: clone(context.globalState.get('manualTasks', [])),
@@ -15,52 +18,69 @@ const recordHistory = (context) => {
         trashData: clone(context.globalState.get('trashData', [])),
         itemTags: clone(context.globalState.get('itemTags', {})),
         userFolders: clone(context.globalState.get('userFolders', [])),
-        fileComments: clone(context.globalState.get('fileComments', [])) 
+        fileComments: clone(context.globalState.get('fileComments', []))
     };
     
     undoStack.push(snapshot);
-    if (undoStack.length > MAX_HISTORY) undoStack.shift(); 
+    if (undoStack.length > MAX_HISTORY) undoStack.shift();
+    
+    // Naya action hote hi Redo stack saaf honi chahiye
     redoStack = []; 
 };
 
-function registerHistoryCommands(context, todoProvider) {
-    // --- UNDO ---
-    vscode.commands.registerCommand('jargon.mainUndo', async () => {
-        if (undoStack.length === 0) return;
+/**
+ * Undo Logic: Ek kadam piche
+ */
+async function undo(context) {
+    if (undoStack.length === 0) {
+        vscode.window.showInformationMessage("DevFlow: Nothing to Undo");
+        return;
+    }
 
-        const currentState = {
-            manualTasks: clone(context.globalState.get('manualTasks', [])),
-            priorityTasks: clone(context.globalState.get('priorityTasks', [])),
-            trashData: clone(context.globalState.get('trashData', [])),
-            itemTags: clone(context.globalState.get('itemTags', {})),
-            userFolders: clone(context.globalState.get('userFolders', [])),
-            fileComments: clone(context.globalState.get('fileComments', []))
-        };
-        redoStack.push(currentState);
+    // Current state ko Redo stack mein bhejein
+    const currentState = {
+        manualTasks: clone(context.globalState.get('manualTasks', [])),
+        priorityTasks: clone(context.globalState.get('priorityTasks', [])),
+        trashData: clone(context.globalState.get('trashData', [])),
+        itemTags: clone(context.globalState.get('itemTags', {})),
+        userFolders: clone(context.globalState.get('userFolders', [])),
+        fileComments: clone(context.globalState.get('fileComments', []))
+    };
+    redoStack.push(currentState);
 
-        const prevState = undoStack.pop();
-        await updateState(context, prevState);
-
-        todoProvider.refresh();
-        logEvent(context, 'Undo', `'History' 'Workspace Reverted'`);
-    });
-
-    // --- REDO ---
-    vscode.commands.registerCommand('jargon.mainRedo', async () => {
-        if (redoStack.length === 0) return;
-
-        const currentState = { /* ...same as above... */ };
-        undoStack.push(currentState);
-
-        const nextState = redoStack.pop();
-        await updateState(context, nextState);
-
-        todoProvider.refresh();
-        logEvent(context, 'Redo', `'History' 'Workspace Restored'`);
-    });
+    // Pichli state nikaalein aur apply karein
+    const prevState = undoStack.pop();
+    await updateState(context, prevState);
 }
 
-// Helper function to update all states at once
+/**
+ * Redo Logic: Ek kadam aage
+ */
+async function redo(context) {
+    if (redoStack.length === 0) {
+        vscode.window.showInformationMessage("DevFlow: Nothing to Redo");
+        return;
+    }
+
+    // Current state ko Undo stack mein wapas bhejein
+    const currentState = {
+        manualTasks: clone(context.globalState.get('manualTasks', [])),
+        priorityTasks: clone(context.globalState.get('priorityTasks', [])),
+        trashData: clone(context.globalState.get('trashData', [])),
+        itemTags: clone(context.globalState.get('itemTags', {})),
+        userFolders: clone(context.globalState.get('userFolders', [])),
+        fileComments: clone(context.globalState.get('fileComments', []))
+    };
+    undoStack.push(currentState);
+
+    // Agli state nikaalein aur apply karein
+    const nextState = redoStack.pop();
+    await updateState(context, nextState);
+}
+
+/**
+ * Helper: Global State Update
+ */
 async function updateState(context, state) {
     await context.globalState.update('manualTasks', state.manualTasks);
     await context.globalState.update('priorityTasks', state.priorityTasks);
@@ -70,4 +90,5 @@ async function updateState(context, state) {
     await context.globalState.update('fileComments', state.fileComments);
 }
 
-module.exports = { registerHistoryCommands, recordHistory };
+// 🔥 Sirf functions export karein, registration workspaceOps mein hai
+module.exports = { recordHistory, undo, redo };

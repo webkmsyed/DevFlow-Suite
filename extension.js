@@ -7,22 +7,22 @@ function activate(context) {
         const { initScanner } = require('./features/engine/scanner');
         
         // --- 1. GLOBAL COMMANDS ---
-        const { registerSearch } = require('./features/main/searchOps');
-        const { registerFilter } = require('./features/main/filterOps');
+        const { registerSearch } = require('./features/main/searchOps.js');
+        const { registerFilter } = require('./features/main/filterOps.js');
         const { registerSort } = require('./features/main/sortOps');
         const { registerExport } = require('./features/main/exportOps');
-        const { registerTimeline } = require('./features/main/timelineOps');
-        const { registerWorkspaceCommands } = require('./features/commands/workspaceOps');
-        const { registerHistoryCommands } = require('./features/commands/historyOps');
-        const { registerNoteCommands } = require('./features/notes/noteEngine');
+        const { registerTimeline } = require('./features/main/timelineOps.js');
+        const { registerWorkspaceCommands } = require('./features/commands/workspaceOps.js');
+        const { recordHistory } = require('./features/commands/historyOps.js');
+        const { registerNoteCommands } = require('./features/notes/noteEngine.js');
 
-        // --- 2. MODULAR SUB-TAB OPS (Index Files) ---
-        const { registerGeneralTabOps } = require('./features/subTabs/general/generalTabIndex');
-        const { registerGeneralTaskOps } = require('./features/subTabTasks/general/generalTaskIndex');
-        const { registerPriorityTabOps } = require('./features/subTabs/priority/priorityTabIndex');
-        const { registerPriorityTaskOps } = require('./features/subTabTasks/priority/priorityTaskIndex');
-        const { registerRecycleTabOps } = require('./features/subTabs/recycle/recycleTabIndex');
-        const { registerRecycleTaskOps } = require('./features/subTabTasks/recycle/recycleTaskIndex');
+        // --- 2. MODULAR SUB-TAB OPS ---
+        const { registerGeneralTabOps } = require('./features/subTabs/general/generalTabIndex.js');
+        const { registerGeneralTaskOps } = require('./features/subTabTasks/general/generalTaskIndex.js');
+        const { registerPriorityTabOps } = require('./features/subTabs/priority/priorityTabIndex.js');
+        const { registerPriorityTaskOps } = require('./features/subTabTasks/priority/priorityTaskIndex.js');
+        const { registerRecycleTabOps } = require('./features/subTabs/recycle/recycleTabIndex.js');
+        const { registerRecycleTaskOps } = require('./features/subTabTasks/recycle/recycleTaskIndex.js');
 
         const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
         const todoProvider = new TodoProvider(rootPath, context);
@@ -46,13 +46,15 @@ function activate(context) {
 
         // Global Main Ops
         registerSearch(context, todoProvider);
-        registerFilter(context, todoProvider); // jargon.mainClearFilters included here
+        registerFilter(context, todoProvider); 
         registerSort(context, todoProvider);
         registerExport(context);
         registerTimeline(context);
         registerWorkspaceCommands(context, todoProvider);
-        registerHistoryCommands(context, todoProvider);
         registerNoteCommands(context);
+
+        // Initial State Record
+        recordHistory(context); 
 
         // --- GLOBAL UTILITIES ---
         context.subscriptions.push(vscode.commands.registerCommand('jargon.openFile', async (file, line) => {
@@ -66,7 +68,7 @@ function activate(context) {
             editor.revealRange(new vscode.Range(pos, pos));
         }));
 
-        // --- SMART AUDIT LOGGING (Anti-Spam) ---
+        // --- SMART AUDIT LOGGING ---
         let previousComments = context.globalState.get('fileComments', []) || [];
         let saveTimeout = null;
 

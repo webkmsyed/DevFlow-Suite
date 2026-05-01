@@ -2,17 +2,18 @@
 const vscode = require('vscode');
 
 function registerPriorityTaskRemove(context, todoProvider) {
-    // ❌ Command: Remove from Priority (jargon.taskRemovePri)
-    context.subscriptions.push(vscode.commands.registerCommand('jargon.taskRemovePri', async (node) => {
+    // 🌟 Bug 9 Fix: Remove from Priority when star is clicked
+    context.subscriptions.push(vscode.commands.registerCommand('jargon.priTaskRemove', async (node) => {
         if (!node) return;
         let pri = context.globalState.get('priorityTasks', []) || [];
-        
-        // Identity Fix: Match unique ID or File:Line
         const nodeId = node.id || `${node.file}:${node.line}`;
+
+        // Filter out the item
         pri = pri.filter(p => (p.id || `${p.file}:${p.line}`) !== nodeId);
         
         await context.globalState.update('priorityTasks', pri);
         todoProvider.refresh();
+        vscode.window.showInformationMessage("Removed from Priority.");
     }));
 }
 module.exports = { registerPriorityTaskRemove };

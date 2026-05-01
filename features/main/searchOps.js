@@ -1,6 +1,10 @@
 // File: features/main/searchOps.js
 const vscode = require('vscode');
 
+/**
+ * Handle Global Search Logic.
+ * Fixes: Updates both GlobalState and Provider for real-time UI filtering.
+ */
 function registerSearch(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.mainSearch', async () => {
         const query = await vscode.window.showInputBox({ 
@@ -8,15 +12,20 @@ function registerSearch(context, todoProvider) {
             placeHolder: "Type to search... (Leave empty to clear search)" 
         });
         
-        // Agar user ne 'Escape' dabaya (undefined) toh kuch mat karo
+        // Escape check
         if (query === undefined) return;
 
-        // Agar user ne kuch likha hai toh search karo, warna clear kar do
         const searchQuery = query.trim().toLowerCase();
+        
+        // 1. Update State (For persistence if needed)
         await context.globalState.update('searchQuery', searchQuery);
         
-        todoProvider.refresh();
+        // 2. 🔥 Trigger Provider Search Logic (Quick Access Results)
+        if (todoProvider && typeof todoProvider.search === 'function') {
+            todoProvider.search(searchQuery);
+        }
         
+        // 3. UI Feedback
         if (searchQuery === "") {
             vscode.window.showInformationMessage("DevFlow-Suite: Search Cleared!");
         } else {
@@ -24,4 +33,5 @@ function registerSearch(context, todoProvider) {
         }
     }));
 }
+
 module.exports = { registerSearch };

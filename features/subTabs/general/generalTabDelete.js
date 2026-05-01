@@ -1,34 +1,38 @@
 // File: features/subTabs/general/generalTabDelete.js
 const vscode = require('vscode');
 const { recordHistory } = require('../../commands/historyOps');
-const { logEvent } = require('../../engine/logger');
 
-function registerGeneralTabDelete(context, todoProvider, scanWorkspace) {
-    // 🗑️ Command: Delete Tab/Folder (jargon.tabDelete)
+function registerGeneralTabDelete(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.tabDelete', async (node) => {
-        if (!node || !node.isUser) {
-            vscode.window.showWarningMessage("System folders cannot be deleted.");
+        if (!node) return;
+        const folderName = node.originalText;
+
+        // 🛡️ Bug 5 Fix: Block ONLY "General Workspace"
+        if (folderName === "General Workspace") {
+            vscode.window.showWarningMessage("DevFlow: 'General Workspace' is a system folder and cannot be deleted.");
             return;
         }
 
         const confirm = await vscode.window.showWarningMessage(
-            `Confirm: Move tasks in '${node.originalText}' to General and delete folder?`,
-            { modal: true }, "Yes, Delete"
+            `Delete folder '${folderName}'? Tasks inside will move to General Workspace.`,
+            { modal: true }, "Delete"
         );
 
-        if (confirm === "Yes, Delete") {
+        if (confirm === "Delete") {
             recordHistory(context);
             
+            // 1. Remove from user folders
             let folders = context.globalState.get('userFolders', []) || [];
-            folders = folders.filter(f => f !== node.originalText);
+            folders = folders.filter(f => f !== folderName);
             await context.globalState.update('userFolders', folders);
             
-            // Re-sync scanned comments taaki unka target General Workspace ho jaye
-            await scanWorkspace();
+            // 2. Move manual tasks in this folder back to General Workspace
+            let tasks = context.globalState.get('manualTasks', []) || [];
+            tasks.forEach(t => { if (t.folder === folderName) t.folder = "General Workspace"; });
+            await context.globalState.update('manualTasks', tasks);
+
             todoProvider.refresh();
-            logEvent(context, 'Delete', `'${node.originalText}' 'Action ➔ Folder Removed'`);
         }
     }));
 }
-
 module.exports = { registerGeneralTabDelete };
