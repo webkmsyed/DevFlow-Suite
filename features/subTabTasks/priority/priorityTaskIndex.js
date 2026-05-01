@@ -1,12 +1,13 @@
-// File: features/subTabTasks/recycle/recycleTaskIndex.js
-const { registerRecycleTaskRestore } = require('./recycleTaskRestore');
-const { registerRecycleTaskDeletePerm } = require('./recycleTaskDeletePerm');
-const { registerRecycleTaskTag } = require('./recycleTaskTag');
+// File: features/subTabTasks/priority/priorityTaskIndex.js
+const { registerPriorityTaskRemove } = require('./priorityTaskRemove');
+const { registerPriorityTaskTag } = require('./priorityTaskTag');
+const { registerPriorityTaskMove } = require('./priorityTaskMove');
 
-function registerRecycleTaskOps(context, todoProvider) {
-    registerRecycleTaskRestore(context, todoProvider);
-    registerRecycleTaskDeletePerm(context, todoProvider);
-    registerRecycleTaskTag(context, todoProvider);
+function registerPriorityTaskOps(context, todoProvider) {
+    // 🔥 Sirf Priority tasks ki logic yahan rahegi
+    registerPriorityTaskRemove(context, todoProvider);
+    registerPriorityTaskTag(context, todoProvider);
+    registerPriorityTaskMove(context, todoProvider);
 }
 
-module.exports = { registerRecycleTaskOps };
+module.exports = { registerPriorityTaskOps };
