@@ -1,7 +1,12 @@
-// File: features/subTabTasks/priority/priorityTaskIndex.js
-const { registerPriorityTaskRemove } = require('./priorityTaskRemove');
+// File: features/subTabTasks/recycle/recycleTaskIndex.js
+const { registerRecycleTaskRestore } = require('./recycleTaskRestore');
+const { registerRecycleTaskDeletePerm } = require('./recycleTaskDeletePerm');
+const { registerRecycleTaskTag } = require('./recycleTaskTag');
 
-function registerPriorityTaskOps(context, todoProvider) {
-    registerPriorityTaskRemove(context, todoProvider);
+function registerRecycleTaskOps(context, todoProvider) {
+    registerRecycleTaskRestore(context, todoProvider);
+    registerRecycleTaskDeletePerm(context, todoProvider);
+    registerRecycleTaskTag(context, todoProvider);
 }
-module.exports = { registerPriorityTaskOps };
+
+module.exports = { registerRecycleTaskOps };
