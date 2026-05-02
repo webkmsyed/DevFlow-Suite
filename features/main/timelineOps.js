@@ -37,9 +37,63 @@ function registerTimeline(context) {
             if (msg.command === 'saveMode') {
                 await context.globalState.update('timelineMode', msg.mode);
             }
+            if (msg.command === 'exportLogs') {
+                vscode.commands.executeCommand('jargon.exportTimeline');
+            }
         });
 
         currentPanel.onDidDispose(() => { currentPanel = null; }, null, context.subscriptions);
+    }));
+
+    // ── EXPORT TIMELINE ──────────────────────────────────────────────────
+    context.subscriptions.push(vscode.commands.registerCommand('jargon.exportTimeline', async () => {
+        const logs = context.globalState.get('auditLogs', []) || [];
+        if (logs.length === 0) {
+            vscode.window.showInformationMessage('DevFlow: No timeline logs to export.');
+            return;
+        }
+
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        const defaultUri = workspaceRoot ? vscode.Uri.file(require('path').join(workspaceRoot, 'devflow-timeline-export.md')) : undefined;
+
+        const uri = await vscode.window.showSaveDialog({
+            defaultUri: defaultUri,
+            filters: { 'Markdown': ['md'], 'JSON': ['json'], 'CSV': ['csv'] }
+        });
+
+        if (!uri) return;
+
+        let content = '';
+        if (uri.fsPath.endsWith('.json')) {
+            content = JSON.stringify(logs, null, 2);
+        } else if (uri.fsPath.endsWith('.csv')) {
+            content = 'Date,Time,Action,Title,Movement,File,Line,Starred\n' + 
+                logs.map(l => {
+                    const matches = [...(l.details || '').matchAll(/'([^']*)'/g)];
+                    const title = matches[0] ? matches[0][1] : l.details;
+                    const movement = matches[1] ? matches[1][1] : '';
+                    return `"${l.date}","${l.time}","${l.action}","${(title||'').replace(/"/g, '""')}","${movement}","${l.file||''}","${l.line||''}","${l.isStarred ? 'Yes' : 'No'}"`;
+                }).join('\n');
+        } else {
+            // Markdown
+            content = '# DevFlow Timeline Export\n\n';
+            logs.forEach(l => {
+                const matches = [...(l.details || '').matchAll(/'([^']*)'/g)];
+                const title = matches[0] ? matches[0][1] : l.details;
+                const movement = matches[1] ? matches[1][1] : '';
+                content += `- **[${l.date} ${l.time}]** [${l.action}] ${title} ${movement ? `(-> ${movement})` : ''}`;
+                if (l.file) content += ` (File: \`${l.file}\`${l.line ? `:${l.line}` : ''})`;
+                if (l.isStarred) content += ` ⭐`;
+                content += '\n';
+            });
+        }
+
+        try {
+            await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
+            vscode.window.showInformationMessage(`DevFlow: Timeline exported successfully!`);
+        } catch (e) {
+            vscode.window.showErrorMessage(`DevFlow: Failed to export timeline - ${e.message}`);
+        }
     }));
 
     const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 10);
@@ -139,6 +193,7 @@ function getHTML(logs, savedMode) {
   <button class="btn" onclick="clearDates()">Clear</button>
   <button class="btn" id="starFilterBtn" onclick="toggleStarFilter()">⭐ Starred</button>
   <button class="btn" onclick="vscode.postMessage({command:'refresh'})">↻ Sync</button>
+  <button class="btn" onclick="vscode.postMessage({command:'exportLogs'})">💾 Export</button>
   <button class="btn mode-btn" id="modeBtn" onclick="toggleMode()" title="Toggle dark/light">${initIcon}</button>
 </div>
 <div class="search-bar">

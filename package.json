@@ -30,6 +30,7 @@
       { "command": "jargon.mainUndo",         "title": "Undo",                   "icon": "$(discard)" },
       { "command": "jargon.mainRedo",         "title": "Redo",                   "icon": "$(redo)" },
       { "command": "jargon.openTimeline",     "title": "Activity Log",           "icon": "$(history)" },
+      { "command": "jargon.exportTimeline",   "title": "Export Timeline",        "icon": "$(export)" },
 
       { "command": "jargon.tabTask",          "title": "Add Task",               "icon": "$(add)" },
       { "command": "jargon.tabNote",          "title": "Folder Note",            "icon": "$(book)" },
