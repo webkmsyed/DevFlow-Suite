@@ -14,7 +14,7 @@ function registerSort(context, todoProvider) {
         if (mode) {
             await context.globalState.update('sortOrder', mode);
             todoProvider.refresh();
-            vscode.window.showInformationMessage(`DevFlow-Suite: Sorted by ${mode}`);
+            vscode.window.showInformationMessage(`DevFlow: User folders sorted by "${mode}".`);
         }
     }));
 }

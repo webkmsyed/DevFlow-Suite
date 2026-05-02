@@ -2,6 +2,10 @@
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
+const {
+    getRoots, getStandardItems, getPriorityItems, getPriorityFolderItems,
+    getRecycleItems, getRecycleFolderItems
+} = require('../providers/treeRenderer');
 
 function registerExport(context) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.mainExport', async () => {
@@ -25,59 +29,168 @@ function registerExport(context) {
 async function doExport(context, folderName, taskText, scope) {
     const format = await vscode.window.showQuickPick([
         { label: '📋 Copy to Clipboard', value: 'clipboard' },
+        { label: '📄 Markdown Table',     value: 'md' },
         { label: '📊 CSV File',           value: 'csv' },
-        { label: '📄 Markdown Table',     value: 'md' }
+        { label: '📝 Text File',          value: 'txt' }
     ], { placeHolder: 'Export format' });
 
     if (!format) return;
 
-    // ── Collect data ───────────────────────────────────────────────────────
-    const manual    = context.globalState.get('manualTasks', []) || [];
-    const scanned   = context.globalState.get('fileComments', []) || [];
-    const priTasks  = context.globalState.get('priorityTasks', []) || [];
-    const trashData = context.globalState.get('trashData', []) || [];
-    const userFolders = context.globalState.get('userFolders', []) || [];
-    const allFolders = ['General Workspace', ...userFolders];
+    // ── Collect data using Tree Renderer (respects sorting & filtering) ────
+    const globalTags = context.globalState.get('itemTags', {}) || {};
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
 
-    let rows = [];
+    const getTag = (id, file, line) => {
+        const key = id ? String(id) : `${file}:${line}`;
+        return globalTags[key] || '';
+    };
 
-    if (scope === 'folder' && folderName) {
-        const folderManual  = manual.filter(t => (t.folder || 'General Workspace') === folderName);
-        const folderScanned = scanned.filter(c => (c.target || 'General Workspace') === folderName);
-        rows = [
-            ...folderManual.map(t => ({ folder: folderName, text: t.text, type: 'Manual', file: '', line: '' })),
-            ...folderScanned.map(c => ({ folder: folderName, text: c.text, type: 'Scanned', file: c.file, line: c.line }))
-        ];
+    const getDate = (item) => {
+        if (item.id && typeof item.id === 'number') {
+            return new Date(item.id).toLocaleDateString();
+        } else if (item.file || item.originalFile) {
+            try {
+                const fPath = item.originalFile || item.file;
+                const stat = fs.statSync(path.join(workspaceRoot, fPath));
+                return stat.mtime.toLocaleDateString();
+            } catch (e) {
+                return new Date().toLocaleDateString();
+            }
+        }
+        return new Date().toLocaleDateString();
+    };
+
+    let groupedData = []; // Array of { folderName: string, items: Array }
+
+    const formatRow = (item, parentFolder) => {
+        let type = 'User Created';
+        if (item.contextValue === 'scannedTask') type = 'Scanned';
+        else if (item.target) type = 'Scanned';
+
+        return {
+            folder: parentFolder,
+            text: item.originalText || item.label || '',
+            type: type,
+            file: item.file || item.originalFile || '',
+            line: item.line || item.originalLine || '',
+            tag: getTag(item.id, item.originalFile || item.file, item.originalLine || item.line),
+            date: getDate(item)
+        };
+    };
+
+    if (scope === 'workspace') {
+        const roots = getRoots(context);
+        for (const root of roots) {
+            if (root.contextValue === 'userTab' || root.contextValue === 'generalTab') {
+                const items = getStandardItems(context, root.originalText);
+                if (items.length > 0) {
+                    groupedData.push({
+                        folderName: root.originalText,
+                        items: items.map(i => formatRow(i, root.originalText))
+                    });
+                }
+            } else if (root.contextValue === 'priorityTab') {
+                const priItems = getPriorityItems(context);
+                if (priItems.length > 0) {
+                    const standalone = priItems.filter(i => i.contextValue === 'priorityTask');
+                    const folders = priItems.filter(i => i.contextValue === 'priorityFolder');
+                    
+                    if (standalone.length > 0) {
+                        groupedData.push({
+                            folderName: 'Priority Tab',
+                            items: standalone.map(i => formatRow(i, 'Priority Tab'))
+                        });
+                    }
+                    
+                    for (const f of folders) {
+                        const fItems = getPriorityFolderItems(context, f.originalText);
+                        if (fItems.length > 0) {
+                            groupedData.push({
+                                folderName: `Priority Tab / ${f.originalText}`,
+                                items: fItems.map(i => formatRow(i, `Priority Tab / ${f.originalText}`))
+                            });
+                        }
+                    }
+                }
+            } else if (root.contextValue === 'recycleTab') {
+                const recItems = getRecycleItems(context);
+                if (recItems.length > 0) {
+                    const standalone = recItems.filter(i => i.contextValue === 'recycleTask');
+                    const folders = recItems.filter(i => i.contextValue === 'recycleFolder');
+                    
+                    if (standalone.length > 0) {
+                        groupedData.push({
+                            folderName: 'Recycle Bin',
+                            items: standalone.map(i => formatRow(i, 'Recycle Bin'))
+                        });
+                    }
+                    
+                    for (const f of folders) {
+                        const fItems = getRecycleFolderItems(context, f.originalText);
+                        if (fItems.length > 0) {
+                            groupedData.push({
+                                folderName: `Recycle Bin / ${f.originalText}`,
+                                items: fItems.map(i => formatRow(i, `Recycle Bin / ${f.originalText}`))
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    } else if (scope === 'folder' && folderName) {
+        const items = getStandardItems(context, folderName);
+        if (items.length > 0) {
+            groupedData.push({
+                folderName: folderName,
+                items: items.map(i => formatRow(i, folderName))
+            });
+        }
     } else if (scope === 'priority') {
-        rows = priTasks.map(t => ({
-            folder: t.folder || t.target || 'Priority',
-            text: t.text,
-            type: t.isScanned ? 'Scanned' : 'Manual',
-            file: t.file || '',
-            line: t.line || ''
-        }));
+        const priItems = getPriorityItems(context);
+        const standalone = priItems.filter(i => i.contextValue === 'priorityTask');
+        const folders = priItems.filter(i => i.contextValue === 'priorityFolder');
+        
+        if (standalone.length > 0) {
+            groupedData.push({
+                folderName: 'Priority Tab',
+                items: standalone.map(i => formatRow(i, 'Priority Tab'))
+            });
+        }
+        
+        for (const f of folders) {
+            const fItems = getPriorityFolderItems(context, f.originalText);
+            if (fItems.length > 0) {
+                groupedData.push({
+                    folderName: `Priority Tab / ${f.originalText}`,
+                    items: fItems.map(i => formatRow(i, `Priority Tab / ${f.originalText}`))
+                });
+            }
+        }
     } else if (scope === 'recycle') {
-        rows = trashData.map(t => ({
-            folder: t.deletedFrom || 'Unknown',
-            text: t.text,
-            type: t.isScanned ? 'Scanned' : 'Manual',
-            file: t.originalFile || '',
-            line: t.originalLine || ''
-        }));
-    } else {
-        // Full workspace export — all folders
-        for (const folder of allFolders) {
-            const fm = manual.filter(t => (t.folder || 'General Workspace') === folder);
-            const fs2 = scanned.filter(c => (c.target || 'General Workspace') === folder);
-            rows.push(
-                ...fm.map(t => ({ folder, text: t.text, type: 'Manual', file: '', line: '' })),
-                ...fs2.map(c => ({ folder, text: c.text, type: 'Scanned', file: c.file, line: String(c.line) }))
-            );
+        const recItems = getRecycleItems(context);
+        const standalone = recItems.filter(i => i.contextValue === 'recycleTask');
+        const folders = recItems.filter(i => i.contextValue === 'recycleFolder');
+        
+        if (standalone.length > 0) {
+            groupedData.push({
+                folderName: 'Recycle Bin',
+                items: standalone.map(i => formatRow(i, 'Recycle Bin'))
+            });
+        }
+        
+        for (const f of folders) {
+            const fItems = getRecycleFolderItems(context, f.originalText);
+            if (fItems.length > 0) {
+                groupedData.push({
+                    folderName: `Recycle Bin / ${f.originalText}`,
+                    items: fItems.map(i => formatRow(i, `Recycle Bin / ${f.originalText}`))
+                });
+            }
         }
     }
 
-    if (!rows.length) {
-        vscode.window.showInformationMessage('DevFlow: Nothing to export.');
+    if (groupedData.length === 0) {
+        vscode.window.showInformationMessage('DevFlow: Nothing to export based on current filters.');
         return;
     }
 
@@ -86,40 +199,79 @@ async function doExport(context, folderName, taskText, scope) {
     const safeName  = (folderName || scope || 'devflow').replace(/[^a-z0-9]/gi, '_');
 
     if (format.value === 'clipboard') {
-        const text = rows.map(r => `[${r.folder}] ${r.text}${r.file ? ` (${r.file}:${r.line})` : ''}`).join('\n');
-        await vscode.env.clipboard.writeText(text);
-        vscode.window.showInformationMessage(`DevFlow: ${rows.length} item(s) copied to clipboard.`);
+        let textLines = [];
+        for (const group of groupedData) {
+            for (const r of group.items) {
+                textLines.push(`[${r.folder}] ${r.text}${r.file ? ` (${r.file}:${r.line})` : ''}`);
+            }
+        }
+        await vscode.env.clipboard.writeText(textLines.join('\n'));
+        vscode.window.showInformationMessage(`DevFlow: ${textLines.length} item(s) copied to clipboard.`);
         return;
     }
 
+    let content = '';
+    let lang = 'plaintext';
+    let defaultFileName = '';
+
     if (format.value === 'csv') {
-        const header = 'Folder,Task,Type,File,Line\n';
-        const body   = rows.map(r =>
-            `"${esc(r.folder)}","${esc(r.text)}","${r.type}","${esc(r.file)}","${r.line}"`
-        ).join('\n');
-        await saveFile(context, `devflow_${safeName}_${timestamp}.csv`, header + body, { 'CSV': ['csv'] });
+        lang = 'csv';
+        defaultFileName = `devflow_${safeName}_${timestamp}.csv`;
+        
+        const csvRows = [];
+        for (const group of groupedData) {
+            csvRows.push(`Folder: ${group.folderName}`);
+            csvRows.push('Task,Tag,Type,Date,File,Line');
+            for (const r of group.items) {
+                csvRows.push(`"${esc(r.text)}","${esc(r.tag)}","${r.type}","${r.date}","${esc(r.file)}","${r.line}"`);
+            }
+            csvRows.push(''); // empty row to separate tables
+        }
+        content = csvRows.join('\n');
     }
 
     if (format.value === 'md') {
-        const header = `# DevFlow Export — ${folderName || scope}\n_${timestamp}_\n\n| Folder | Task | Type | File | Line |\n|--------|------|------|------|------|\n`;
-        const body   = rows.map(r =>
-            `| ${md(r.folder)} | ${md(r.text)} | ${r.type} | ${md(r.file)} | ${r.line} |`
-        ).join('\n');
-        await saveFile(context, `devflow_${safeName}_${timestamp}.md`, header + body, { 'Markdown': ['md'] });
-    }
-}
+        lang = 'markdown';
+        defaultFileName = `devflow_${safeName}_${timestamp}.md`;
+        content = `# DevFlow Export — ${folderName || scope}\n_${timestamp}_\n\n`;
 
-async function saveFile(context, defaultName, content, filters) {
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
-    const savePath = await vscode.window.showSaveDialog({
-        defaultUri: vscode.Uri.file(path.join(workspaceRoot, defaultName)),
-        filters
-    });
-    if (!savePath) return;
-    fs.writeFileSync(savePath.fsPath, content, 'utf8');
-    const doc = await vscode.workspace.openTextDocument(savePath);
-    await vscode.window.showTextDocument(doc);
-    vscode.window.showInformationMessage(`DevFlow: Exported ✓`);
+        for (const group of groupedData) {
+            content += `## 📁 Folder: ${group.folderName}\n`;
+            content += `| Task | Tag | Type | Date | File | Line |\n`;
+            content += `|------|-----|------|------|------|------|\n`;
+            content += group.items.map(r =>
+                `| ${md(r.text)} | ${md(r.tag)} | ${r.type} | ${r.date} | ${md(r.file)} | ${r.line} |`
+            ).join('\n');
+            content += '\n\n';
+        }
+    }
+
+    if (format.value === 'txt') {
+        lang = 'plaintext';
+        defaultFileName = `devflow_${safeName}_${timestamp}.txt`;
+        content = `DevFlow Export — ${folderName || scope}\nDate: ${timestamp}\n\n`;
+
+        for (const group of groupedData) {
+            content += `==================================================\n`;
+            content += `📁 Folder: ${group.folderName}\n`;
+            content += `==================================================\n`;
+            group.items.forEach(r => {
+                content += `[Task]: ${r.text}\n`;
+                if (r.tag) content += `[Tag]:  ${r.tag}\n`;
+                content += `[Type]: ${r.type}\n`;
+                content += `[Date]: ${r.date}\n`;
+                if (r.file) content += `[File]: ${r.file}:${r.line}\n`;
+                content += `--------------------------------------------------\n`;
+            });
+            content += '\n';
+        }
+    }
+
+    // Show Preview using an anonymous Untitled Document to avoid file conflicts
+    const doc = await vscode.workspace.openTextDocument({ content, language: lang });
+    await vscode.window.showTextDocument(doc, { preview: true });
+
+    vscode.window.showInformationMessage(`Preview ready. Press Ctrl+S to save. (Suggested name: ${defaultFileName})`);
 }
 
 function esc(s) { return String(s || '').replace(/"/g, '""'); }

@@ -7,11 +7,11 @@ function registerFilter(context, todoProvider) {
             'All Items (Default)', 
             'Manual Tasks Only', 
             'Scanned Comments Only',
-            'Bugs Only (🔴)',          
-            'Untagged Items Only',     
-            'Filter by Specific Tag... 🏷️', // 🔥 NEW: Dynamic Tag Sub-menu
-            'Clear Search & Filters'   
-        ], { placeHolder: 'Advanced Filter Workspace By:' });
+            'Tagged Items Only',
+            'Untagged Items Only',
+            'Filter by Specific Tag... 🏷️',
+            'Clear Search & Filters'
+        ], { placeHolder: 'Filter all folders in workspace by:' });
 
         if (!choice) return;
 
@@ -50,8 +50,8 @@ function registerFilter(context, todoProvider) {
 
         // 3. Normal Filter Logic
         await context.globalState.update('activeFilter', choice);
-        await context.globalState.update('activeTagFilter', ''); // Reset tag state
-        vscode.window.showInformationMessage(`DevFlow-Suite: Filtered by ${choice}`);
+        await context.globalState.update('activeTagFilter', '');
+        vscode.window.showInformationMessage(`DevFlow: All folders filtered by "${choice}" — expand tabs to see results.`);
         todoProvider.refresh();
     }));
 }

@@ -23,7 +23,7 @@ function registerGeneralTaskPriority(context, todoProvider) {
         if (existingIdx > -1) {
             // --- ❌ REMOVE: Toggle Off ---
             pri.splice(existingIdx, 1);
-            logEvent(context, 'Priority', `Unstarred: '${node.originalText}' removed from Priority`);
+            logEvent(context, 'Priority', `'${node.originalText || node.label}' 'Task -> Removed from Priority'`);
         } else {
             // --- ⭐ ADD: Toggle On with Metadata ---
             pri.push({ 
@@ -34,7 +34,7 @@ function registerGeneralTaskPriority(context, todoProvider) {
                 line: node.line || null,
                 folder: node.parentLabel || "General Workspace"
             });
-            logEvent(context, 'Priority', `Starred: '${node.originalText}' added to Priority`);
+            logEvent(context, 'Priority', `'${node.originalText || node.label}' 'Task -> Pinned to Priority'`);
         }
 
         await context.globalState.update('priorityTasks', pri);

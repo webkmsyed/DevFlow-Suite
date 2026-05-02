@@ -1,19 +1,8 @@
 // File: features/subTabs/general/generalTabExport.js
-const vscode = require('vscode');
+// NOTE: jargon.tabExport is already registered in exportOps.js (which handles all export scopes).
+// This file is kept for module compatibility but registers nothing to avoid duplicate command errors.
 
 function registerGeneralTabExport(context) {
-    context.subscriptions.push(vscode.commands.registerCommand('jargon.tabExport', async (node) => {
-        if (!node) return;
-        const folderName = node.originalText;
-
-        const manual = context.globalState.get('manualTasks', []) || [];
-        const items = manual.filter(t => t.folder === folderName).map(t => `- [ ] ${t.text}`);
-
-        let output = `# Report: ${folderName}\n\n${items.join('\n')}`;
-        const doc = await vscode.workspace.openTextDocument({ content: output, language: 'markdown' });
-        
-        // 🚀 Bug 4 Fix: Open beside current window as a new tab
-        await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.Beside, preview: false });
-    }));
+    // intentionally empty — jargon.tabExport is registered globally in exportOps.js
 }
 module.exports = { registerGeneralTabExport };

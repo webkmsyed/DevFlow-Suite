@@ -4,7 +4,53 @@ const vscode = require('vscode');
 // ── Root Tabs ─────────────────────────────────────────────────────────────
 function getRoots(context) {
     const userFolders = context.globalState.get('userFolders', []) || [];
-    return [
+    const sortOrder = context.globalState.get('sortOrder', 'Default') || 'Default';
+
+    // User-created folders at TOP (sortable)
+    let userTabs = userFolders.map(f => ({
+        label: f,
+        originalText: f,
+        contextValue: 'userTab',
+        isUserFolder: true,
+        collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
+        iconPath: new vscode.ThemeIcon('folder')
+    }));
+
+    if (sortOrder === 'A-Z (Alphabetical)') {
+        userTabs.sort((a, b) => a.label.localeCompare(b.label));
+    } else if (sortOrder === 'Z-A (Reverse Alphabetical)') {
+        userTabs.sort((a, b) => b.label.localeCompare(a.label));
+    } else if (sortOrder.startsWith('Folder Size')) {
+        const manualTasks = context.globalState.get('manualTasks', []) || [];
+        const fileComments = context.globalState.get('fileComments', []) || [];
+        const trashData = context.globalState.get('trashData', []) || [];
+
+        const isInTrash = (item) => {
+            if (item.file) {
+                return trashData.some(t => t.originalFile === item.file && t.originalLine === item.line);
+            }
+            return trashData.some(t => String(t.id) === String(item.id));
+        };
+
+        const getFolderSize = (folderName) => {
+            const manualCount = manualTasks.filter(t => (t.folder || 'General Workspace') === folderName && !isInTrash(t)).length;
+            const scannedCount = fileComments.filter(c => (c.target || 'General Workspace') === folderName && !isInTrash(c)).length;
+            return manualCount + scannedCount;
+        };
+
+        userTabs.sort((a, b) => {
+            const sizeA = getFolderSize(a.label);
+            const sizeB = getFolderSize(b.label);
+            if (sortOrder === 'Folder Size (High to Low)') {
+                return sizeB - sizeA;
+            } else {
+                return sizeA - sizeB;
+            }
+        });
+    }
+
+    // Default tabs PINNED at BOTTOM — always last, always fixed
+    const pinnedTabs = [
         {
             label: 'General Workspace',
             originalText: 'General Workspace',
@@ -12,14 +58,6 @@ function getRoots(context) {
             collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
             iconPath: new vscode.ThemeIcon('archive')
         },
-        ...userFolders.map(f => ({
-            label: f,
-            originalText: f,
-            contextValue: 'userTab',
-            isUserFolder: true,
-            collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
-            iconPath: new vscode.ThemeIcon('folder')
-        })),
         {
             label: 'Priority Tab',
             originalText: 'Priority Tab',
@@ -35,6 +73,8 @@ function getRoots(context) {
             iconPath: new vscode.ThemeIcon('trash')
         }
     ];
+
+    return [...userTabs, ...pinnedTabs];
 }
 
 // ── Standard Tab Items (General + User Created) ───────────────────────────
@@ -86,13 +126,8 @@ function getStandardItems(context, folderName) {
         ...scanned.map(c => formatTask(c, 'scannedTask', folderName))
     ];
 
-    // Apply sort
-    if (sortOrder === 'A-Z (Alphabetical)') {
-        combined.sort((a, b) => (a.label || '').localeCompare(b.label || ''));
-    } else if (sortOrder.startsWith('Z-A')) {
-        combined.sort((a, b) => (b.label || '').localeCompare(a.label || ''));
-    }
-
+    // Sort is now tab-level only (handled by sortOps reordering userFolders array).
+    // Tasks within each tab stay in insertion order (most recent last).
     return combined;
 }
 
