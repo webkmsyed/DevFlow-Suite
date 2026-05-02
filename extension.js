@@ -5,8 +5,8 @@ function activate(context) {
     try {
         const TodoProvider = require('./features/todoProvider');
         const { initScanner } = require('./features/engine/scanner');
-        
-        // --- 1. GLOBAL COMMANDS ---
+        const DragDropController = require('./features/providers/dragDropController');
+
         const { registerSearch } = require('./features/main/searchOps.js');
         const { registerFilter } = require('./features/main/filterOps.js');
         const { registerSort } = require('./features/main/sortOps');
@@ -16,7 +16,6 @@ function activate(context) {
         const { recordHistory } = require('./features/commands/historyOps.js');
         const { registerNoteCommands } = require('./features/notes/noteEngine.js');
 
-        // --- 2. MODULAR SUB-TAB OPS ---
         const { registerGeneralTabOps } = require('./features/subTabs/general/generalTabIndex.js');
         const { registerGeneralTaskOps } = require('./features/subTabTasks/general/generalTaskIndex.js');
         const { registerPriorityTabOps } = require('./features/subTabs/priority/priorityTabIndex.js');
@@ -27,16 +26,16 @@ function activate(context) {
         const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
         const todoProvider = new TodoProvider(rootPath, context);
         const scanWorkspaceForComments = initScanner(context, todoProvider);
+        const dragDropController = new DragDropController(context, todoProvider);
 
         const treeView = vscode.window.createTreeView('todo-explorer', {
             treeDataProvider: todoProvider,
-            dragAndDropController: todoProvider,
+            dragAndDropController: dragDropController,
             canSelectMany: false,
             showCollapseAll: true
         });
         context.subscriptions.push(treeView);
 
-        // --- REGISTER ALL MODULAR OPS ---
         registerGeneralTabOps(context, todoProvider, scanWorkspaceForComments);
         registerGeneralTaskOps(context, todoProvider);
         registerPriorityTabOps(context, todoProvider);
@@ -44,45 +43,53 @@ function activate(context) {
         registerRecycleTabOps(context, todoProvider);
         registerRecycleTaskOps(context, todoProvider);
 
-        // Global Main Ops
         registerSearch(context, todoProvider);
-        registerFilter(context, todoProvider); 
+        registerFilter(context, todoProvider);
         registerSort(context, todoProvider);
         registerExport(context);
         registerTimeline(context);
         registerWorkspaceCommands(context, todoProvider);
         registerNoteCommands(context);
 
-        // Initial State Record
-        recordHistory(context); 
-
-        // --- GLOBAL UTILITIES ---
-        context.subscriptions.push(vscode.commands.registerCommand('jargon.openFile', async (file, line) => {
-            const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-            if (!workspaceRoot) return;
-            const fileUri = vscode.Uri.file(require('path').join(workspaceRoot, file));
-            const doc = await vscode.workspace.openTextDocument(fileUri);
-            const editor = await vscode.window.showTextDocument(doc);
-            const pos = new vscode.Position(line - 1, 0);
-            editor.selection = new vscode.Selection(pos, pos);
-            editor.revealRange(new vscode.Range(pos, pos));
+        context.subscriptions.push(vscode.commands.registerCommand('jargon.mainClearSearch', () => {
+            todoProvider.search('');
+            context.globalState.update('searchQuery', '');
+            vscode.commands.executeCommand('setContext', 'devflow.searchActive', false);
+            vscode.window.showInformationMessage('DevFlow: Search cleared.');
         }));
 
-        // --- SMART AUDIT LOGGING ---
+        context.subscriptions.push(vscode.commands.registerCommand('jargon.openFile', async (file, line) => {
+            const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+            if (!workspaceRoot || !file) return;
+            try {
+                const fileUri = vscode.Uri.file(require('path').join(workspaceRoot, file));
+                const doc = await vscode.workspace.openTextDocument(fileUri);
+                const editor = await vscode.window.showTextDocument(doc);
+                const lineNum = Math.max(0, (line || 1) - 1);
+                const pos = new vscode.Position(lineNum, 0);
+                editor.selection = new vscode.Selection(pos, pos);
+                editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
+            } catch (e) {
+                vscode.window.showWarningMessage(`DevFlow: Cannot open file: ${file}`);
+            }
+        }));
+
+        recordHistory(context);
+
         let previousComments = context.globalState.get('fileComments', []) || [];
         let saveTimeout = null;
-
-        vscode.workspace.onDidSaveTextDocument(async (document) => {
+        vscode.workspace.onDidSaveTextDocument(async () => {
             if (saveTimeout) clearTimeout(saveTimeout);
             saveTimeout = setTimeout(async () => {
                 const currentComments = context.globalState.get('fileComments', []) || [];
                 const newComments = currentComments.filter(curr =>
                     !previousComments.some(prev => prev.file === curr.file && prev.line === curr.line)
                 );
-
                 newComments.forEach(comment => {
                     require('./features/engine/logger').logEvent(
-                        context, 'Create', `'${comment.text}' 'Code File ➔ Scanned Task'`, comment.file, comment.line
+                        context, 'Create',
+                        `'${comment.text}' 'Code File -> Scanned Task'`,
+                        comment.file, comment.line
                     );
                 });
                 previousComments = currentComments;
@@ -90,9 +97,10 @@ function activate(context) {
         });
 
     } catch (error) {
-        vscode.window.showErrorMessage(`DevFlow-Suite Crash: ${error.message}`);
+        vscode.window.showErrorMessage(`DevFlow-Suite Error: ${error.message}`);
+        console.error('DevFlow-Suite crash:', error);
     }
 }
 
-function deactivate() {}
+function deactivate() { }
 module.exports = { activate, deactivate };

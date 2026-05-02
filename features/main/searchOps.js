@@ -1,35 +1,32 @@
 // File: features/main/searchOps.js
 const vscode = require('vscode');
 
-/**
- * Handle Global Search Logic.
- * Fixes: Updates both GlobalState and Provider for real-time UI filtering.
- */
 function registerSearch(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.mainSearch', async () => {
-        const query = await vscode.window.showInputBox({ 
-            prompt: "Search Tasks or Comments",
-            placeHolder: "Type to search... (Leave empty to clear search)" 
+        const currentQuery = context.globalState.get('searchQuery', '') || '';
+
+        const query = await vscode.window.showInputBox({
+            prompt: 'Search tasks and comments',
+            placeHolder: 'Type to search… leave empty to clear',
+            value: currentQuery
         });
-        
-        // Escape check
+
+        // Escaped (pressed Escape)
         if (query === undefined) return;
 
         const searchQuery = query.trim().toLowerCase();
-        
-        // 1. Update State (For persistence if needed)
         await context.globalState.update('searchQuery', searchQuery);
-        
-        // 2. 🔥 Trigger Provider Search Logic (Quick Access Results)
-        if (todoProvider && typeof todoProvider.search === 'function') {
-            todoProvider.search(searchQuery);
-        }
-        
-        // 3. UI Feedback
-        if (searchQuery === "") {
-            vscode.window.showInformationMessage("DevFlow-Suite: Search Cleared!");
+
+        if (searchQuery === '') {
+            // Clear search
+            todoProvider.search('');
+            vscode.commands.executeCommand('setContext', 'devflow.searchActive', false);
+            vscode.window.showInformationMessage('DevFlow: Search cleared.');
         } else {
-            vscode.window.showInformationMessage(`DevFlow-Suite: Results for "${query}"`);
+            // Activate search — shows X button in title bar
+            vscode.commands.executeCommand('setContext', 'devflow.searchActive', true);
+            todoProvider.search(searchQuery);
+            vscode.window.showInformationMessage(`DevFlow: Results for "${query}" — press ✕ to clear`);
         }
     }));
 }

@@ -2,12 +2,8 @@
 const vscode = require('vscode');
 const { logEvent } = require('../../engine/logger');
 
-/**
- * Handle Folder-Level Priority (Star/Unstar).
- * Logic: Recursive Toggle (Folder + All Tasks).
- */
 function registerGeneralTabPriority(context, todoProvider) {
-    
+
     const togglePriority = async (node) => {
         if (!node) return;
 
@@ -18,45 +14,53 @@ function registerGeneralTabPriority(context, todoProvider) {
         const folderName = node.originalText || node.label;
         const folderId = `folder:${folderName}`;
 
-        const isPinned = priorityTasks.some(p => p.id === folderId);
+        // Check if this folder is already pinned (by checking if any task with this folder exists in priority)
+        const isAlreadyPinned = priorityTasks.some(p => p._sourceFolder === folderId);
 
-        if (isPinned) {
-            // --- ❌ UNSTAR LOGIC: Remove Folder and its Tasks ---
-            priorityTasks = priorityTasks.filter(p => 
-                p.id !== folderId && 
-                p.folder !== folderName && 
-                p.target !== folderName
-            );
-            logEvent(context, 'Priority', `Unpinned: '${folderName}' and items removed from Priority`);
+        if (isAlreadyPinned) {
+            // UNSTAR: Remove all tasks that came from this folder
+            priorityTasks = priorityTasks.filter(p => p._sourceFolder !== folderId);
+            logEvent(context, 'Priority', `'${folderName}' 'Action -> Folder Unpinned from Priority'`);
             vscode.window.showInformationMessage(`DevFlow: '${folderName}' removed from Priority.`);
         } else {
-            // --- ⭐ STAR LOGIC: Add Folder and All Current Tasks ---
-            // 1. Add Folder Instance
-            priorityTasks.push({ 
-                id: folderId, 
-                text: folderName, 
-                type: 'folder', 
-                isScanned: false 
-            });
+            // STAR: Add all tasks from this folder to priority
+            // FIX: Do NOT add the folder itself as an item — only add its tasks
+            // FIX: Items STAY in general tab (we only add references to priority, not move them)
 
-            // 2. Add Manual Tasks belonging to this folder
             const folderManual = manualTasks.filter(t => t.folder === folderName);
             folderManual.forEach(t => {
-                if (!priorityTasks.some(p => String(p.id) === String(t.id))) {
-                    priorityTasks.push({ ...t, type: 'task', isScanned: false });
+                const alreadyIn = priorityTasks.some(p => p.id && String(p.id) === String(t.id));
+                if (!alreadyIn) {
+                    priorityTasks.push({
+                        ...t,
+                        type: 'task',
+                        isScanned: false,
+                        _sourceFolder: folderId  // Track which folder this came from
+                    });
                 }
             });
 
-            // 3. Add Scanned Comments belonging to this folder
             const folderScanned = fileComments.filter(c => c.target === folderName);
             folderScanned.forEach(c => {
                 const scanId = `${c.file}:${c.line}`;
-                if (!priorityTasks.some(p => p.id === scanId)) {
-                    priorityTasks.push({ ...c, id: scanId, type: 'task', isScanned: true });
+                const alreadyIn = priorityTasks.some(p => p.file === c.file && p.line === c.line);
+                if (!alreadyIn) {
+                    priorityTasks.push({
+                        ...c,
+                        id: scanId,
+                        type: 'task',
+                        isScanned: true,
+                        _sourceFolder: folderId  // Track which folder this came from
+                    });
                 }
             });
 
-            logEvent(context, 'Priority', `Pinned: '${folderName}' and all items added to Priority`);
+            if (folderManual.length === 0 && folderScanned.length === 0) {
+                vscode.window.showInformationMessage(`DevFlow: '${folderName}' is empty — no tasks to pin.`);
+                return;
+            }
+
+            logEvent(context, 'Priority', `'${folderName}' 'Action -> Folder Pinned to Priority'`);
             vscode.window.showInformationMessage(`DevFlow: '${folderName}' pinned to Priority.`);
         }
 
@@ -64,9 +68,10 @@ function registerGeneralTabPriority(context, todoProvider) {
         todoProvider.refresh();
     };
 
-    // Fix for Bug 2 & 8: Registering both command IDs
+    // FIX: Only ONE command for folder priority — removed jargon.subFolderPriority duplicate
+    // The package.json should only have jargon.tabSavePri for standardTab (remove subFolderPriority from menus)
     context.subscriptions.push(vscode.commands.registerCommand('jargon.tabSavePri', togglePriority));
-    context.subscriptions.push(vscode.commands.registerCommand('jargon.subFolderPriority', togglePriority));
+    context.subscriptions.push(vscode.commands.registerCommand('jargon.subFolderPriority', togglePriority)); // kept for backward compat
 }
 
 module.exports = { registerGeneralTabPriority };

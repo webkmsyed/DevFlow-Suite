@@ -1,17 +1,10 @@
 // File: features/subTabTasks/priority/priorityTaskTag.js
-const vscode = require('vscode');
+// BUG 9 FIX: was registering 'jargon.priorityTaskTag' (wrong name)
+// 'jargon.taskTag' is already registered in generalTaskTag.js and handles all contexts
+// including priorityTask — no duplicate registration needed here
 
 function registerPriorityTaskTag(context, todoProvider) {
-    context.subscriptions.push(vscode.commands.registerCommand('jargon.priorityTaskTag', async (node) => {
-        if (!node) return;
-        const tag = await vscode.window.showInputBox({ prompt: `Tag for Priority Item: "${node.originalText}"` });
-        if (tag !== undefined) {
-            let tagsDict = context.globalState.get('itemTags', {}) || {};
-            const itemKey = node.id || `${node.file}:${node.line}`; 
-            tagsDict[itemKey] = tag.trim();
-            await context.globalState.update('itemTags', tagsDict);
-            todoProvider.refresh();
-        }
-    }));
+    // Intentionally empty — jargon.taskTag is shared and handled by generalTaskTag.js
 }
+
 module.exports = { registerPriorityTaskTag };

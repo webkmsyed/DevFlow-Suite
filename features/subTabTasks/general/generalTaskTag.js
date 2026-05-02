@@ -3,45 +3,74 @@ const vscode = require('vscode');
 const { logEvent } = require('../../engine/logger');
 const { recordHistory } = require('../../commands/historyOps');
 
-/**
- * Handle Task-Level Tagging.
- * Bug Fix: Ensures unique ID matching and immediate provider refresh.
- */
+// Preset emoji tag options — same system used everywhere
+const TAG_PRESETS = [
+    { label: '🐛  Bug', value: '🐛' },
+    { label: '⚠️  Alert', value: '⚠️' },
+    { label: '🔥  Critical', value: '🔥' },
+    { label: '✅  Done', value: '✅' },
+    { label: '💡  Idea', value: '💡' },
+    { label: '📝  Note', value: '📝' },
+    { label: '👤  User Created', value: '👤' },
+    { label: '🚀  Feature', value: '🚀' },
+    { label: '🔵  In Progress', value: '🔵' },
+    { label: '⏸️  Paused', value: '⏸️' },
+    { label: '─────────────', value: '__sep__', kind: vscode.QuickPickItemKind.Separator },
+    { label: '✏️  Custom Tag...', value: 'custom' },
+    { label: '🗑️  Remove Tag', value: 'clear' },
+];
+
+async function pickTag(currentTag = '') {
+    const items = TAG_PRESETS.filter(t => t.value !== '__sep__').map(t => ({
+        ...t,
+        description: t.value === currentTag ? '← current' : ''
+    }));
+
+    const selection = await vscode.window.showQuickPick(items, {
+        placeHolder: currentTag ? `Current: ${currentTag} — pick new tag or remove` : 'Select a tag',
+        matchOnDescription: true
+    });
+
+    if (!selection) return null; // cancelled
+    if (selection.value === 'clear') return '';
+    if (selection.value === 'custom') {
+        const custom = await vscode.window.showInputBox({
+            prompt: 'Enter custom tag text',
+            value: currentTag,
+            placeHolder: 'e.g. review, v2, blocked'
+        });
+        return custom !== undefined ? custom.trim() : null;
+    }
+    return selection.value;
+}
+
 function registerGeneralTaskTag(context, todoProvider) {
-    
-    // 🏷️ Command: Add/Remove Tag (jargon.taskTag)
     context.subscriptions.push(vscode.commands.registerCommand('jargon.taskTag', async (node) => {
         if (!node) return;
 
         const currentTags = context.globalState.get('itemTags', {}) || {};
-        const itemKey = node.id || `${node.file}:${node.line}`;
-        const existingTag = currentTags[itemKey] || "";
+        const itemKey = node.id ? String(node.id) : `${node.file}:${node.line}`;
+        const existingTag = currentTags[itemKey] || '';
 
-        const tag = await vscode.window.showInputBox({ 
-            prompt: `Tag for "${node.originalText}"`,
-            value: existingTag,
-            placeHolder: "Type tag name or 'clear' to remove" 
-        });
+        const newTag = await pickTag(existingTag);
+        if (newTag === null) return; // user cancelled
 
-        if (tag !== undefined) {
-            recordHistory(context);
-            let tagsDict = context.globalState.get('itemTags', {}) || {};
-            
-            if (tag.trim().toLowerCase() === "clear" || tag.trim() === "") {
-                delete tagsDict[itemKey];
-                logEvent(context, 'Tag', `'${node.originalText}' 'Action ➔ Tag Removed'`);
-            } else {
-                tagsDict[itemKey] = tag.trim();
-                logEvent(context, 'Tag', `'${node.originalText}' 'Action ➔ Tagged as ${tag}'`);
-            }
+        recordHistory(context);
+        let tagsDict = context.globalState.get('itemTags', {}) || {};
 
-            await context.globalState.update('itemTags', tagsDict);
-            
-            // 🔥 Force refresh to show the new tag in UI
-            todoProvider.refresh();
-            vscode.window.showInformationMessage(`DevFlow: Tag updated for '${node.originalText}'`);
+        if (newTag === '') {
+            delete tagsDict[itemKey];
+            logEvent(context, 'Tag', `'${node.originalText}' 'Action -> Tag Removed'`);
+            vscode.window.showInformationMessage(`DevFlow: Tag removed.`);
+        } else {
+            tagsDict[itemKey] = newTag;
+            logEvent(context, 'Tag', `'${node.originalText}' 'Action -> Tagged ${newTag}'`);
+            vscode.window.showInformationMessage(`DevFlow: Tagged as ${newTag}`);
         }
+
+        await context.globalState.update('itemTags', tagsDict);
+        todoProvider.refresh();
     }));
 }
 
-module.exports = { registerGeneralTaskTag };
+module.exports = { registerGeneralTaskTag, pickTag };

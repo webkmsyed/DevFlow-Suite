@@ -1,12 +1,8 @@
 // File: features/todoProvider.js
 const vscode = require('vscode');
-const { 
-    getRoots, 
-    getStandardItems, 
-    getPriorityItems, 
-    getPriorityFolderItems, 
-    getRecycleItems, 
-    getSearchResults 
+const {
+    getRoots, getStandardItems, getPriorityItems,
+    getPriorityFolderItems, getRecycleItems, getSearchResults
 } = require('./providers/treeRenderer');
 
 class TodoProvider {
@@ -15,49 +11,52 @@ class TodoProvider {
         this.context = context;
         this._onDidChangeTreeData = new vscode.EventEmitter();
         this.onDidChangeTreeData = this._onDidChangeTreeData.event;
-        this.searchQuery = "";
+        this.searchQuery = '';
     }
 
-    refresh() { this._onDidChangeTreeData.fire(); }
+    refresh() { this._onDidChangeTreeData.fire(undefined); }
 
     search(query) {
-        this.searchQuery = query;
+        this.searchQuery = query || '';
         this.refresh();
     }
 
     getTreeItem(element) {
         const treeItem = new vscode.TreeItem(element.label, element.collapsibleState);
-        
-        treeItem.contextValue = element.contextValue || ""; 
-        treeItem.iconPath = element.iconPath;
-        treeItem.id = element.id ? String(element.id) : undefined;
+        treeItem.contextValue = element.contextValue || '';
 
-        // --- 🏷️ Tag Visibility (Standard) ---
+        // FIX: Use _vsTreeId for priority items to avoid duplicate ID conflicts
+        treeItem.id = element._vsTreeId || (element.id ? String(element.id) : undefined);
+        treeItem.iconPath = element.iconPath;
+
+        // --- Tag Display: FIX - tag at START of label ---
         const tags = this.context.globalState.get('itemTags', {}) || {};
-        const itemKey = element.id || `${element.file}:${element.line}`;
-        const folderKey = treeItem.contextValue === "standardTab" ? `folder:${element.originalText}` : itemKey;
-        const activeTag = tags[folderKey] || tags[itemKey];
+        const itemKey = element.id ? String(element.id) : `${element.file}:${element.line}`;
+        const folderKey = `folder:${element.originalText}`;
+        const activeTag = (element.contextValue === 'standardTab') ? tags[folderKey] : tags[itemKey];
 
         if (activeTag) {
-            treeItem.description = `[${activeTag}]`;
+            // FIX: Tag at START of label, not at end as description
+            treeItem.label = `${activeTag} ${element.label}`;
         } else if (element.description) {
             treeItem.description = element.description;
         }
 
-        // --- 🔴 Priority Specific: Tags at the START (Emoji + Text) ---
-        if (treeItem.contextValue.includes("priority")) {
+        // Priority emoji tags (already at start — preserved)
+        if (treeItem.contextValue && treeItem.contextValue.includes('priority') && treeItem.contextValue !== 'priorityTab' && treeItem.contextValue !== 'priorityFolder') {
             const priTags = this.context.globalState.get('priorityItemTags', {}) || {};
             const id = element.id || `${element.file}:${element.line}`;
             if (priTags[id]) {
-                treeItem.label = `${priTags[id]} ${element.label}`; 
+                const baseLabel = activeTag ? `${activeTag} ${element.label}` : element.label;
+                treeItem.label = `${priTags[id]} ${baseLabel}`;
             }
         }
 
-        // Click logic
+        // Click to open file
         if (element.file) {
             treeItem.command = {
                 command: 'jargon.openFile',
-                title: "Open File",
+                title: 'Open File',
                 arguments: [element.file, element.line]
             };
         }
@@ -66,16 +65,18 @@ class TodoProvider {
     }
 
     async getChildren(element) {
-        if (!element && this.searchQuery) return getSearchResults(this.context, this.searchQuery);
+        // Search mode: show results at root level
+        if (!element && this.searchQuery && this.searchQuery.trim() !== '') {
+            return getSearchResults(this.context, this.searchQuery);
+        }
+
         if (!element) return getRoots(this.context);
 
-        if (element.contextValue === "priorityTab") return getPriorityItems(this.context);
-        if (element.contextValue === "priorityFolder") return getPriorityFolderItems(this.context, element.originalText);
-        if (element.contextValue === "standardTab" || element.label === "General Workspace") {
-            return getStandardItems(this.context, element.originalText || element.label);
-        }
-        if (element.contextValue === "recycleTab") return getRecycleItems(this.context);
-        
+        if (element.contextValue === 'priorityTab') return getPriorityItems(this.context);
+        if (element.contextValue === 'priorityFolder') return getPriorityFolderItems(this.context, element.originalText);
+        if (element.contextValue === 'standardTab') return getStandardItems(this.context, element.originalText || element.label);
+        if (element.contextValue === 'recycleTab') return getRecycleItems(this.context);
+
         return [];
     }
 }

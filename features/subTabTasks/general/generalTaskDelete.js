@@ -4,37 +4,71 @@ const { logEvent } = require('../../engine/logger');
 const { recordHistory } = require('../../commands/historyOps');
 
 function registerGeneralTaskDelete(context, todoProvider) {
-    // 🗑️ Command: Move to Recycle (jargon.taskDelTemp)
     context.subscriptions.push(vscode.commands.registerCommand('jargon.taskDelTemp', async (node) => {
         if (!node) return;
         recordHistory(context);
 
+        const isScanned = node.contextValue === 'scannedTask' || !!node.file;
         let trash = context.globalState.get('trashData', []) || [];
-        const isScanned = node.contextValue !== 'standardTask' && node.file;
+        let pri = context.globalState.get('priorityTasks', []) || [];
 
-        const newItem = { 
-            id: node.id || Date.now(), 
-            text: node.originalText, 
-            isScanned: isScanned, 
-            deletedFrom: node.parentLabel || "General Workspace",
+        // Build trash entry
+        const trashEntry = {
+            id: node.id || Date.now() + Math.random(),
+            text: node.originalText || node.label,
+            isScanned: isScanned,
+            deletedFrom: node.parentLabel || node.folder || 'General Workspace',
             originalFile: node.file || null,
-            originalLine: node.line || null
+            originalLine: node.line || null,
+            file: node.file || null,
+            line: node.line || null
         };
 
-        // Logic: Agar manual task hai toh main list se hatao
-        if (!isScanned) {
-            let tasks = context.globalState.get('manualTasks', []) || [];
-            tasks = tasks.filter(t => String(t.id) !== String(node.id));
-            await context.globalState.update('manualTasks', tasks);
+        if (isScanned) {
+            // For scanned tasks: remove from fileComments (physical delete handled if needed)
+            let fileComments = context.globalState.get('fileComments', []) || [];
+            fileComments = fileComments.filter(c => !(c.file === node.file && c.line === node.line));
+            await context.globalState.update('fileComments', fileComments);
+
+            // Optionally delete from source file
+            if (node.file && vscode.workspace.workspaceFolders?.[0]) {
+                try {
+                    const fileUri = vscode.Uri.joinPath(
+                        vscode.workspace.workspaceFolders[0].uri, node.file
+                    );
+                    const edit = new vscode.WorkspaceEdit();
+                    edit.delete(fileUri, new vscode.Range(
+                        new vscode.Position(node.line - 1, 0),
+                        new vscode.Position(node.line, 0)
+                    ));
+                    await vscode.workspace.applyEdit(edit);
+                    const doc = await vscode.workspace.openTextDocument(fileUri);
+                    await doc.save();
+                } catch (e) { /* file might be read-only — just remove from state */ }
+            }
         } else {
-            // Scanned comments ke liye humne treeRenderer mein filter lagaya hai[cite: 1]
+            // Manual task: remove from manualTasks
+            let manual = context.globalState.get('manualTasks', []) || [];
+            manual = manual.filter(t => String(t.id) !== String(node.id));
+            await context.globalState.update('manualTasks', manual);
         }
 
-        trash.push(newItem);
+        // Remove from priority if pinned
+        const nodeId = node.id ? String(node.id) : `${node.file}:${node.line}`;
+        pri = pri.filter(p => {
+            const pId = p.id ? String(p.id) : `${p.file}:${p.line}`;
+            return pId !== nodeId;
+        });
+        await context.globalState.update('priorityTasks', pri);
+
+        trash.push(trashEntry);
         await context.globalState.update('trashData', trash);
-        
-        logEvent(context, 'Delete', `'${node.originalText}' 'General ➔ Recycle Bin'`, node.file, node.line);
+
         todoProvider.refresh();
+        logEvent(context, 'Delete',
+            `'${trashEntry.text}' '${trashEntry.deletedFrom} -> Recycle Bin'`,
+            node.file, node.line
+        );
     }));
 }
 

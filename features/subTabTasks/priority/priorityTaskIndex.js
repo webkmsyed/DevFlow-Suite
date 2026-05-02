@@ -1,13 +1,11 @@
 // File: features/subTabTasks/priority/priorityTaskIndex.js
-const { registerPriorityTaskRemove } = require('./priorityTaskRemove');
-const { registerPriorityTaskTag } = require('./priorityTaskTag');
-const { registerPriorityTaskMove } = require('./priorityTaskMove');
+// FIX: Was importing priorityTaskRemove (which had duplicate jargon.taskRemovePri registration).
+// Now ALL priority task ops come from priorityTaskOps.js — single source of truth.
 
-function registerPriorityTaskOps(context, todoProvider) {
-    // 🔥 Sirf Priority tasks ki logic yahan rahegi
-    registerPriorityTaskRemove(context, todoProvider);
-    registerPriorityTaskTag(context, todoProvider);
-    registerPriorityTaskMove(context, todoProvider);
+const { registerPriorityTaskOps } = require('./priorityTaskOps');
+
+function registerPriorityTaskOps_Index(context, todoProvider) {
+    registerPriorityTaskOps(context, todoProvider);
 }
 
-module.exports = { registerPriorityTaskOps };
+module.exports = { registerPriorityTaskOps: registerPriorityTaskOps_Index };

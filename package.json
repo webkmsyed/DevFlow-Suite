@@ -1,426 +1,140 @@
 {
   "name": "devflow-suite",
-  "displayName": "jargoniseasy DevFlow-Suite",
-  "description": "Enterprise Workspace Manager for jargoniseasy.com",
+  "displayName": "DevFlow Suite",
+  "description": "Workspace task manager for developers",
   "version": "1.0.0",
   "publisher": "webkmsyed",
-  "engines": {
-    "vscode": "^1.75.0"
-  },
+  "engines": { "vscode": "^1.75.0" },
   "main": "./extension.js",
-  "activationEvents": [
-    "onView:todo-explorer"
-  ],
+  "activationEvents": ["onView:todo-explorer"],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
-        {
-          "id": "jargon-devflow",
-          "title": "jargoniseasy DevFlow",
-          "icon": "$(rocket)"
-        }
+        { "id": "jargon-devflow", "title": "DevFlow Suite", "icon": "resources/devflow.svg" }
       ]
     },
     "views": {
       "jargon-devflow": [
-        {
-          "id": "todo-explorer",
-          "name": "DevFlow Workspace",
-          "dragAndDropController": true
-        }
+        { "id": "todo-explorer", "name": "DevFlow Workspace" }
       ]
     },
     "commands": [
-      {
-        "command": "jargon.mainFolder",
-        "title": "Create Folder",
-        "icon": "$(new-folder)"
-      },
-      {
-        "command": "jargon.mainExport",
-        "title": "Export Dropdown",
-        "icon": "$(export)"
-      },
-      {
-        "command": "jargon.mainRefresh",
-        "title": "Refresh",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "jargon.mainDelete",
-        "title": "Delete All",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "jargon.mainClearFilters",
-        "title": "Filter",
-        "icon": "$(filter)"
-      },
-      {
-        "command": "jargon.mainSearch",
-        "title": "Search",
-        "icon": "$(search)"
-      },
-      {
-        "command": "jargon.mainSort",
-        "title": "Drag & Sort",
-        "icon": "$(sort-precedence)"
-      },
-      {
-        "command": "jargon.mainUndo",
-        "title": "Undo Last Action",
-        "icon": "$(reply)"
-      },
-      {
-        "command": "jargon.mainRedo",
-        "title": "Redo Action",
-        "icon": "$(share)"
-      },
-      {
-        "command": "jargon.openNote",
-        "title": "Open Note",
-        "icon": "$(book)"
-      },
-      {
-        "command": "jargon.openTimeline",
-        "title": "Activity Timeline",
-        "icon": "$(history)"
-      },
-      {
-        "command": "jargon.tabTask",
-        "title": "Create Task",
-        "icon": "$(add)"
-      },
-      {
-        "command": "jargon.tabSavePri",
-        "title": "Save to Priority",
-        "icon": "$(star)"
-      },
-      {
-        "command": "jargon.tabTag",
-        "title": "Add Tag (Color/Emoji)",
-        "icon": "$(tag)"
-      },
-      {
-        "command": "jargon.tabExport",
-        "title": "Export Tab",
-        "icon": "$(export)"
-      },
-      {
-        "command": "jargon.tabDelete",
-        "title": "Delete Tab",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "jargon.tabFilter",
-        "title": "Filter Tab",
-        "icon": "$(filter)"
-      },
-      {
-        "command": "jargon.tabSort",
-        "title": "Sort Tab",
-        "icon": "$(sort-precedence)"
-      },
-      {
-        "command": "jargon.priRemoveAll",
-        "title": "Remove All",
-        "icon": "$(clear-all)"
-      },
-      {
-        "command": "jargon.priExport",
-        "title": "Export Priority",
-        "icon": "$(export)"
-      },
-      {
-        "command": "jargon.priAddAll",
-        "title": "Add All To",
-        "icon": "$(move)"
-      },
-      {
-        "command": "jargon.recRestoreAll",
-        "title": "Restore All",
-        "icon": "$(history)"
-      },
-      {
-        "command": "jargon.recExport",
-        "title": "Export Recycle",
-        "icon": "$(export)"
-      },
-      {
-        "command": "jargon.recSearch",
-        "title": "Search Recycle",
-        "icon": "$(search)"
-      },
-      {
-        "command": "jargon.recDeleteAll",
-        "title": "Delete All Permanent",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "jargon.taskCopy",
-        "title": "Copy Task",
-        "icon": "$(copy)"
-      },
-      {
-        "command": "jargon.taskSavePri",
-        "title": "Save to Priority",
-        "icon": "$(star)"
-      },
-      {
-        "command": "jargon.taskTag",
-        "title": "Add Tag",
-        "icon": "$(tag)"
-      },
-      {
-        "command": "jargon.taskAddTo",
-        "title": "Add To...",
-        "icon": "$(replace)"
-      },
-      {
-        "command": "jargon.taskDelTemp",
-        "title": "Move to Recycle",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "jargon.taskRemovePri",
-        "title": "Remove Priority",
-        "icon": "$(star-empty)"
-      },
-      {
-        "command": "jargon.taskRestore",
-        "title": "Restore Task",
-        "icon": "$(discard)"
-      },
-      {
-        "command": "jargon.taskDelPerm",
-        "title": "Delete Permanent",
-        "icon": "$(close)"
-      },
-      {
-        "command": "jargon.subFolderRename",
-        "title": "Rename Folder",
-        "icon": "$(edit)"
-      },
-      {
-        "command": "jargon.subFolderPriority",
-        "title": "Star Whole Folder",
-        "icon": "$(star-full)"
-      },
-      {
-        "command": "jargon.subFolderExport",
-        "title": "Export Folder Report",
-        "icon": "$(cloud-download)"
-      },
-      {
-        "command": "jargon.subTaskSort",
-        "title": "Quick Sort Tab",
-        "icon": "$(list-ordered)"
-      }
+      { "command": "jargon.mainFolder",       "title": "New Folder",             "icon": "$(new-folder)" },
+      { "command": "jargon.mainExport",       "title": "Export Workspace",       "icon": "$(export)" },
+      { "command": "jargon.mainRefresh",      "title": "Scan / Refresh",         "icon": "$(refresh)" },
+      { "command": "jargon.mainDelete",       "title": "Wipe Workspace",         "icon": "$(trash)" },
+      { "command": "jargon.mainClearFilters", "title": "Filter",                 "icon": "$(filter)" },
+      { "command": "jargon.mainSearch",       "title": "Search",                 "icon": "$(search)" },
+      { "command": "jargon.mainClearSearch",  "title": "Clear Search",           "icon": "$(close)" },
+      { "command": "jargon.mainSort",         "title": "Sort",                   "icon": "$(sort-precedence)" },
+      { "command": "jargon.mainUndo",         "title": "Undo",                   "icon": "$(discard)" },
+      { "command": "jargon.mainRedo",         "title": "Redo",                   "icon": "$(redo)" },
+      { "command": "jargon.openTimeline",     "title": "Activity Log",           "icon": "$(history)" },
+
+      { "command": "jargon.tabTask",          "title": "Add Task",               "icon": "$(add)" },
+      { "command": "jargon.tabNote",          "title": "Folder Note",            "icon": "$(book)" },
+      { "command": "jargon.tabSavePri",       "title": "Pin Folder to Priority", "icon": "$(star)" },
+      { "command": "jargon.tabTag",           "title": "Flag Folder",            "icon": "$(tag)" },
+      { "command": "jargon.tabExport",        "title": "Export Folder",          "icon": "$(export)" },
+      { "command": "jargon.tabDelete",        "title": "Move Folder to Recycle", "icon": "$(trash)" },
+      { "command": "jargon.subFolderRename",  "title": "Rename Folder",          "icon": "$(edit)" },
+
+      { "command": "jargon.priCreateTask",    "title": "Add Task to Priority",   "icon": "$(add)" },
+      { "command": "jargon.priRemoveAll",     "title": "Clear All Priority",     "icon": "$(clear-all)" },
+      { "command": "jargon.priExport",        "title": "Export Priority",        "icon": "$(export)" },
+      { "command": "jargon.priAddAll",        "title": "Pin All Tasks",          "icon": "$(star-full)" },
+
+      { "command": "jargon.recRestoreAll",    "title": "Restore All",            "icon": "$(history)" },
+      { "command": "jargon.recExport",        "title": "Export Bin",             "icon": "$(export)" },
+      { "command": "jargon.recSearch",        "title": "Search Bin",             "icon": "$(search)" },
+      { "command": "jargon.recDeleteAll",     "title": "Empty Bin Permanently",  "icon": "$(trash)" },
+
+      { "command": "jargon.taskCopy",         "title": "Copy",                   "icon": "$(copy)" },
+      { "command": "jargon.taskSavePri",      "title": "Pin to Priority",        "icon": "$(star)" },
+      { "command": "jargon.taskTag",          "title": "Flag",                   "icon": "$(tag)" },
+      { "command": "jargon.taskAddTo",        "title": "Add To Folder",          "icon": "$(reply)" },
+      { "command": "jargon.taskDelTemp",      "title": "Move to Recycle",        "icon": "$(trash)" },
+      { "command": "jargon.openNote",         "title": "Note",                   "icon": "$(book)" },
+      { "command": "jargon.taskRename",       "title": "Rename Task",            "icon": "$(edit)" },
+      { "command": "jargon.taskRemovePri",    "title": "Remove from Priority",   "icon": "$(star-empty)" },
+      { "command": "jargon.taskRestore",      "title": "Restore",                "icon": "$(arrow-up)" },
+      { "command": "jargon.taskDelPerm",      "title": "Delete Permanently",     "icon": "$(close)" }
     ],
     "menus": {
       "view/title": [
-        {
-          "command": "jargon.mainFolder",
-          "when": "view == todo-explorer",
-          "group": "navigation@2"
-        },
-        {
-          "command": "jargon.mainExport",
-          "when": "view == todo-explorer",
-          "group": "navigation@3"
-        },
-        {
-          "command": "jargon.mainRefresh",
-          "when": "view == todo-explorer",
-          "group": "navigation@4"
-        },
-        {
-          "command": "jargon.mainDelete",
-          "when": "view == todo-explorer",
-          "group": "navigation@5"
-        },
-        {
-          "command": "jargon.mainClearFilters",
-          "when": "view == todo-explorer",
-          "group": "navigation@6"
-        },
-        {
-          "command": "jargon.mainSearch",
-          "when": "view == todo-explorer",
-          "group": "navigation@7"
-        },
-        {
-          "command": "jargon.mainSort",
-          "when": "view == todo-explorer",
-          "group": "navigation@8"
-        },
-        {
-          "command": "jargon.mainUndo",
-          "when": "view == todo-explorer",
-          "group": "navigation@9"
-        },
-        {
-          "command": "jargon.mainRedo",
-          "when": "view == todo-explorer",
-          "group": "navigation@10"
-        }
+        { "command": "jargon.mainFolder",       "when": "view == todo-explorer",                         "group": "navigation@1" },
+        { "command": "jargon.mainSearch",       "when": "view == todo-explorer",                         "group": "navigation@2" },
+        { "command": "jargon.mainClearSearch",  "when": "view == todo-explorer && devflow.searchActive", "group": "navigation@3" },
+        { "command": "jargon.mainClearFilters", "when": "view == todo-explorer",                         "group": "navigation@4" },
+        { "command": "jargon.mainSort",         "when": "view == todo-explorer",                         "group": "navigation@5" },
+        { "command": "jargon.mainRefresh",      "when": "view == todo-explorer",                         "group": "navigation@6" },
+        { "command": "jargon.mainExport",       "when": "view == todo-explorer",                         "group": "navigation@7" },
+        { "command": "jargon.mainUndo",         "when": "view == todo-explorer",                         "group": "navigation@8" },
+        { "command": "jargon.mainRedo",         "when": "view == todo-explorer",                         "group": "navigation@9" },
+        { "command": "jargon.mainDelete",       "when": "view == todo-explorer",                         "group": "navigation@10" }
       ],
       "view/item/context": [
-        {
-          "command": "jargon.tabTask",
-          "when": "view == todo-explorer && viewItem == standardTab",
-          "group": "inline@1"
-        },
-        {
-          "command": "jargon.tabSavePri",
-          "when": "view == todo-explorer && viewItem == standardTab",
-          "group": "inline@2"
-        },
-        {
-          "command": "jargon.tabTag",
-          "when": "view == todo-explorer && viewItem == standardTab",
-          "group": "inline@3"
-        },
-        {
-          "command": "jargon.tabExport",
-          "when": "view == todo-explorer && viewItem == standardTab",
-          "group": "inline@4"
-        },
-        {
-          "command": "jargon.tabDelete",
-          "when": "view == todo-explorer && viewItem == standardTab",
-          "group": "inline@5"
-        },
-        {
-          "command": "jargon.tabFilter",
-          "when": "view == todo-explorer && viewItem == standardTab",
-          "group": "inline@6"
-        },
-        {
-          "command": "jargon.tabSort",
-          "when": "view == todo-explorer && viewItem == standardTab",
-          "group": "inline@7"
-        },
-        {
-          "command": "jargon.openNote",
-          "when": "viewItem =~ /standardTask|priorityTask|standardTab/",
-          "group": "inline"
-        },
-        {
-          "command": "jargon.priRemoveAll",
-          "when": "view == todo-explorer && viewItem == priorityTab",
-          "group": "inline@1"
-        },
-        {
-          "command": "jargon.priExport",
-          "when": "view == todo-explorer && viewItem == priorityTab",
-          "group": "inline@2"
-        },
-        {
-          "command": "jargon.priAddAll",
-          "when": "view == todo-explorer && viewItem == priorityTab",
-          "group": "inline@3"
-        },
-        {
-          "command": "jargon.recRestoreAll",
-          "when": "view == todo-explorer && viewItem == recycleTab",
-          "group": "inline@1"
-        },
-        {
-          "command": "jargon.recExport",
-          "when": "view == todo-explorer && viewItem == recycleTab",
-          "group": "inline@2"
-        },
-        {
-          "command": "jargon.recSearch",
-          "when": "view == todo-explorer && viewItem == recycleTab",
-          "group": "inline@3"
-        },
-        {
-          "command": "jargon.recDeleteAll",
-          "when": "view == todo-explorer && viewItem == recycleTab",
-          "group": "inline@4"
-        },
-        {
-          "command": "jargon.taskCopy",
-          "when": "view == todo-explorer && viewItem == standardTask",
-          "group": "inline@1"
-        },
-        {
-          "command": "jargon.taskSavePri",
-          "when": "view == todo-explorer && viewItem == standardTask",
-          "group": "inline@2"
-        },
-        {
-          "command": "jargon.taskTag",
-          "when": "view == todo-explorer && viewItem == standardTask",
-          "group": "inline@3"
-        },
-        {
-          "command": "jargon.taskAddTo",
-          "when": "view == todo-explorer && viewItem == standardTask",
-          "group": "inline@4"
-        },
-        {
-          "command": "jargon.taskDelTemp",
-          "when": "view == todo-explorer && viewItem == standardTask",
-          "group": "inline@5"
-        },
-        {
-          "command": "jargon.taskCopy",
-          "when": "view == todo-explorer && viewItem == priorityTask",
-          "group": "inline@1"
-        },
-        {
-          "command": "jargon.taskTag",
-          "when": "view == todo-explorer && viewItem == priorityTask",
-          "group": "inline@2"
-        },
-        {
-          "command": "jargon.taskAddTo",
-          "when": "view == todo-explorer && viewItem == priorityTask",
-          "group": "inline@3"
-        },
-        {
-          "command": "jargon.taskRemovePri",
-          "when": "view == todo-explorer && viewItem == priorityTask",
-          "group": "inline@4"
-        },
-        {
-          "command": "jargon.taskRestore",
-          "when": "view == todo-explorer && viewItem == recycleTask",
-          "group": "inline@1"
-        },
-        {
-          "command": "jargon.taskDelPerm",
-          "when": "view == todo-explorer && viewItem == recycleTask",
-          "group": "inline@2"
-        },
-        {
-          "command": "jargon.taskCopy",
-          "when": "view == todo-explorer && viewItem == recycleTask",
-          "group": "inline@3"
-        },
-        {
-          "command": "jargon.taskTag",
-          "when": "view == todo-explorer && viewItem == recycleTask",
-          "group": "inline@4"
-        },
-        {
-          "command": "jargon.subFolderRename",
-          "when": "view == todo-explorer && viewItem == standardTab",
-          "group": "inline@8"
-        },
-        {
-          "command": "jargon.subFolderPriority",
-          "when": "view == todo-explorer && viewItem == standardTab",
-          "group": "inline@9"
-        },
-        {
-          "command": "jargon.subTaskSort",
-          "when": "view == todo-explorer && viewItem == standardTab",
-          "group": "inline@10"
-        }
+
+        { "command": "jargon.tabTask",         "when": "view == todo-explorer && viewItem == generalTab", "group": "inline@1" },
+        { "command": "jargon.tabSavePri",      "when": "view == todo-explorer && viewItem == generalTab", "group": "inline@2" },
+        { "command": "jargon.tabExport",       "when": "view == todo-explorer && viewItem == generalTab", "group": "inline@3" },
+        { "command": "jargon.tabDelete",       "when": "view == todo-explorer && viewItem == generalTab", "group": "inline@4" },
+        { "command": "jargon.tabNote",         "when": "view == todo-explorer && viewItem == generalTab", "group": "1_ctx@1" },
+        { "command": "jargon.openTimeline",    "when": "view == todo-explorer && viewItem == generalTab", "group": "1_ctx@2" },
+
+        { "command": "jargon.tabTask",         "when": "view == todo-explorer && viewItem == userTab",    "group": "inline@1" },
+        { "command": "jargon.tabSavePri",      "when": "view == todo-explorer && viewItem == userTab",    "group": "inline@2" },
+        { "command": "jargon.tabTag",          "when": "view == todo-explorer && viewItem == userTab",    "group": "inline@3" },
+        { "command": "jargon.tabExport",       "when": "view == todo-explorer && viewItem == userTab",    "group": "inline@4" },
+        { "command": "jargon.tabDelete",       "when": "view == todo-explorer && viewItem == userTab",    "group": "inline@5" },
+        { "command": "jargon.subFolderRename", "when": "view == todo-explorer && viewItem == userTab",    "group": "1_ctx@1" },
+        { "command": "jargon.tabNote",         "when": "view == todo-explorer && viewItem == userTab",    "group": "1_ctx@2" },
+        { "command": "jargon.openTimeline",    "when": "view == todo-explorer && viewItem == userTab",    "group": "1_ctx@3" },
+
+        { "command": "jargon.taskCopy",        "when": "view == todo-explorer && viewItem == standardTask", "group": "inline@1" },
+        { "command": "jargon.taskSavePri",     "when": "view == todo-explorer && viewItem == standardTask", "group": "inline@2" },
+        { "command": "jargon.taskTag",         "when": "view == todo-explorer && viewItem == standardTask", "group": "inline@3" },
+        { "command": "jargon.taskAddTo",       "when": "view == todo-explorer && viewItem == standardTask", "group": "inline@4" },
+        { "command": "jargon.openNote",        "when": "view == todo-explorer && viewItem == standardTask", "group": "inline@5" },
+        { "command": "jargon.taskDelTemp",     "when": "view == todo-explorer && viewItem == standardTask", "group": "inline@6" },
+        { "command": "jargon.taskRename",      "when": "view == todo-explorer && viewItem == standardTask", "group": "1_ctx@1" },
+
+        { "command": "jargon.taskCopy",        "when": "view == todo-explorer && viewItem == scannedTask",  "group": "inline@1" },
+        { "command": "jargon.taskSavePri",     "when": "view == todo-explorer && viewItem == scannedTask",  "group": "inline@2" },
+        { "command": "jargon.taskTag",         "when": "view == todo-explorer && viewItem == scannedTask",  "group": "inline@3" },
+        { "command": "jargon.taskAddTo",       "when": "view == todo-explorer && viewItem == scannedTask",  "group": "inline@4" },
+        { "command": "jargon.openNote",        "when": "view == todo-explorer && viewItem == scannedTask",  "group": "inline@5" },
+        { "command": "jargon.taskDelTemp",     "when": "view == todo-explorer && viewItem == scannedTask",  "group": "inline@6" },
+
+        { "command": "jargon.taskCopy",        "when": "view == todo-explorer && viewItem == searchResult", "group": "inline@1" },
+        { "command": "jargon.taskSavePri",     "when": "view == todo-explorer && viewItem == searchResult", "group": "inline@2" },
+        { "command": "jargon.taskTag",         "when": "view == todo-explorer && viewItem == searchResult", "group": "inline@3" },
+        { "command": "jargon.taskDelTemp",     "when": "view == todo-explorer && viewItem == searchResult", "group": "inline@4" },
+
+        { "command": "jargon.priCreateTask",   "when": "view == todo-explorer && viewItem == priorityTab",    "group": "inline@1" },
+        { "command": "jargon.priAddAll",       "when": "view == todo-explorer && viewItem == priorityTab",    "group": "inline@2" },
+        { "command": "jargon.priExport",       "when": "view == todo-explorer && viewItem == priorityTab",    "group": "inline@3" },
+        { "command": "jargon.priRemoveAll",    "when": "view == todo-explorer && viewItem == priorityTab",    "group": "inline@4" },
+
+        { "command": "jargon.taskRemovePri",   "when": "view == todo-explorer && viewItem == priorityFolder", "group": "inline@1" },
+        { "command": "jargon.tabExport",       "when": "view == todo-explorer && viewItem == priorityFolder", "group": "inline@2" },
+        { "command": "jargon.taskTag",         "when": "view == todo-explorer && viewItem == priorityFolder", "group": "inline@3" },
+
+        { "command": "jargon.taskCopy",        "when": "view == todo-explorer && viewItem == priorityTask",   "group": "inline@1" },
+        { "command": "jargon.taskTag",         "when": "view == todo-explorer && viewItem == priorityTask",   "group": "inline@2" },
+        { "command": "jargon.taskAddTo",       "when": "view == todo-explorer && viewItem == priorityTask",   "group": "inline@3" },
+        { "command": "jargon.openNote",        "when": "view == todo-explorer && viewItem == priorityTask",   "group": "inline@4" },
+        { "command": "jargon.taskRemovePri",   "when": "view == todo-explorer && viewItem == priorityTask",   "group": "inline@5" },
+
+        { "command": "jargon.recRestoreAll",   "when": "view == todo-explorer && viewItem == recycleTab",     "group": "inline@1" },
+        { "command": "jargon.recSearch",       "when": "view == todo-explorer && viewItem == recycleTab",     "group": "inline@2" },
+        { "command": "jargon.recExport",       "when": "view == todo-explorer && viewItem == recycleTab",     "group": "inline@3" },
+        { "command": "jargon.recDeleteAll",    "when": "view == todo-explorer && viewItem == recycleTab",     "group": "inline@4" },
+
+        { "command": "jargon.taskRestore",     "when": "view == todo-explorer && viewItem == recycleTask",    "group": "inline@1" },
+        { "command": "jargon.taskCopy",        "when": "view == todo-explorer && viewItem == recycleTask",    "group": "inline@2" },
+        { "command": "jargon.taskTag",         "when": "view == todo-explorer && viewItem == recycleTask",    "group": "inline@3" },
+        { "command": "jargon.taskDelPerm",     "when": "view == todo-explorer && viewItem == recycleTask",    "group": "inline@4" }
       ]
     }
   }
