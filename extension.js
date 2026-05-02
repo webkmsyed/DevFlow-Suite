@@ -89,13 +89,17 @@ function activate(context) {
     if (historyMod)   safeRun('historyOps',   () => historyMod.recordHistory(context));
 
     // ── Sub-Tab Modules ────────────────────────────────────────────────────
-    const genTabMod     = safeRequire('./features/subTabs/general/generalTabIndex.js');
-    const genTaskMod    = safeRequire('./features/subTabTasks/general/generalTaskIndex.js');
-    const priTabMod     = safeRequire('./features/subTabs/priority/priorityTabIndex.js');
-    const priTaskMod    = safeRequire('./features/subTabTasks/priority/priorityTaskIndex.js');
-    const recTabMod     = safeRequire('./features/subTabs/recycle/recycleTabIndex.js');
-    const recTaskMod    = safeRequire('./features/subTabTasks/recycle/recycleTaskIndex.js');
+    const userTabMod    = safeRequire('./features/mainWorkspaceTab/subTabs/userCreatedTab/indexSubTab.js');
+    const userTaskMod   = safeRequire('./features/mainWorkspaceTab/subTabTasks/userCreatedTask/indexSubTabTasks.js');
+    const genTabMod     = safeRequire('./features/mainWorkspaceTab/subTabs/generalTab/indexSubTab.js');
+    const genTaskMod    = safeRequire('./features/mainWorkspaceTab/subTabTasks/generalTask/indexSubTabTasks.js');
+    const priTabMod     = safeRequire('./features/mainWorkspaceTab/subTabs/priorityTab/indexSubTab.js');
+    const priTaskMod    = safeRequire('./features/mainWorkspaceTab/subTabTasks/priorityTask/indexSubTabTasks.js');
+    const recTabMod     = safeRequire('./features/mainWorkspaceTab/subTabs/recycleTab/indexSubTab.js');
+    const recTaskMod    = safeRequire('./features/mainWorkspaceTab/subTabTasks/recycleTask/indexSubTabTasks.js');
 
+    if (userTabMod) safeRun('userCreatedTabOps',  () => userTabMod.registerUserCreatedTabOps(context, todoProvider, scanWorkspaceForComments));
+    if (userTaskMod) safeRun('userCreatedTaskOps', () => userTaskMod.registerUserCreatedTaskOps(context, todoProvider));
     if (genTabMod)  safeRun('generalTabOps',    () => genTabMod.registerGeneralTabOps(context, todoProvider, scanWorkspaceForComments));
     if (genTaskMod) safeRun('generalTaskOps',   () => genTaskMod.registerGeneralTaskOps(context, todoProvider));
     if (priTabMod)  safeRun('priorityTabOps',   () => priTabMod.registerPriorityTabOps(context, todoProvider));

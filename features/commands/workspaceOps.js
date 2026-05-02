@@ -5,35 +5,6 @@ const { recordHistory, undo, redo } = require('./historyOps');
 
 function registerWorkspaceCommands(context, todoProvider) {
 
-    context.subscriptions.push(vscode.commands.registerCommand('jargon.mainFolder', async () => {
-        const folderName = await vscode.window.showInputBox({
-            prompt: 'Enter New Folder Name',
-            placeHolder: 'e.g., Marketing, Backend, V2-Design'
-        });
-
-        if (!folderName || folderName.trim() === '') return;
-
-        const trimmed = folderName.trim();
-        recordHistory(context);
-        let folders = context.globalState.get('userFolders', []) || [];
-
-        if (folders.includes(trimmed)) {
-            vscode.window.showWarningMessage(`DevFlow: Folder '${trimmed}' already exists!`);
-            return;
-        }
-
-        folders.push(trimmed);
-        await context.globalState.update('userFolders', folders);
-        todoProvider.refresh();
-        logEvent(context, 'Create', `'${trimmed}' 'Action -> New Folder Created'`);
-
-        // FIX: Auto-scan so file comments matching this folder name appear immediately
-        // Scanner uses folder name prefix matching — triggering it now populates the new tab
-        setTimeout(() => {
-            vscode.commands.executeCommand('jargon.mainRefresh');
-        }, 300);
-    }));
-
     context.subscriptions.push(vscode.commands.registerCommand('jargon.mainUndo', async () => {
         await undo(context);
         todoProvider.refresh();
