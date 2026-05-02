@@ -1,6 +1,6 @@
 // File: features/subTabTasks/general/generalTaskAddTo.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
+const { logEvent } = require('../../../engine/logger');
 
 function registerGeneralTaskAddTo(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.taskAddTo', async (node) => {

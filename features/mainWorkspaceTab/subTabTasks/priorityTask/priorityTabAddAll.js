@@ -1,6 +1,6 @@
 // File: features/subTabs/priority/priorityTabAddAll.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
+const { logEvent } = require('../../../engine/logger');
 
 function registerPriorityTabAddAll(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.priAddAll', async () => {

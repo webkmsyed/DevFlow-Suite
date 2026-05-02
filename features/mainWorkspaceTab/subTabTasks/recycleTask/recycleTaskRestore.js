@@ -1,7 +1,7 @@
 // File: features/subTabTasks/recycle/recycleTaskRestore.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
-const { recordHistory } = require('../../commands/historyOps');
+const { logEvent } = require('../../../engine/logger');
+const { recordHistory } = require('../../../commands/historyOps');
 
 function registerRecycleTaskRestore(context, todoProvider) {
     // BUG 3 FIX: was 'jargon.recycleRestore' — package.json needs 'jargon.taskRestore'

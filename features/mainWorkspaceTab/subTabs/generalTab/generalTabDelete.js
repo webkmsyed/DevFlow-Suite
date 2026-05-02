@@ -1,7 +1,7 @@
 // File: features/subTabs/general/generalTabDelete.js
 const vscode = require('vscode');
-const { recordHistory } = require('../../commands/historyOps');
-const { logEvent } = require('../../engine/logger');
+const { recordHistory } = require('../../../commands/historyOps');
+const { logEvent } = require('../../../engine/logger');
 
 function registerGeneralTabDelete(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.tabDelete', async (node) => {

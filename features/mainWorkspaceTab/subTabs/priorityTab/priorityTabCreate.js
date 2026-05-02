@@ -1,6 +1,6 @@
 // File: features/subTabs/priority/priorityTabCreate.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
+const { logEvent } = require('../../../engine/logger');
 
 function registerPriorityTabCreate(context, todoProvider) {
     // Add a manual task directly into Priority tab

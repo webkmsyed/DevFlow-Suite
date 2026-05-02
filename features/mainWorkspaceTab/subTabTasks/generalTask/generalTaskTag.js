@@ -1,7 +1,7 @@
 // File: features/subTabTasks/general/generalTaskTag.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
-const { recordHistory } = require('../../commands/historyOps');
+const { logEvent } = require('../../../engine/logger');
+const { recordHistory } = require('../../../commands/historyOps');
 
 // Preset emoji tag options — same system used everywhere
 const TAG_PRESETS = [

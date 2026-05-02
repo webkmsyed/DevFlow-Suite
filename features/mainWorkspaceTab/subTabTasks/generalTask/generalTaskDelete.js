@@ -1,7 +1,7 @@
 // File: features/subTabTasks/general/generalTaskDelete.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
-const { recordHistory } = require('../../commands/historyOps');
+const { logEvent } = require('../../../engine/logger');
+const { recordHistory } = require('../../../commands/historyOps');
 
 function registerGeneralTaskDelete(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.taskDelTemp', async (node) => {

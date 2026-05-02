@@ -1,7 +1,7 @@
 // File: features/subTabTasks/general/generalTaskRename.js
 const vscode = require('vscode');
-const { recordHistory } = require('../../commands/historyOps');
-const { logEvent } = require('../../engine/logger');
+const { recordHistory } = require('../../../commands/historyOps');
+const { logEvent } = require('../../../engine/logger');
 
 function registerGeneralTaskRename(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.taskRename', async (node) => {

@@ -1,6 +1,6 @@
 // File: features/subTabTasks/priority/priorityTaskOps.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
+const { logEvent } = require('../../../engine/logger');
 const { pickTag }  = require('../general/generalTaskTag');
 
 function registerPriorityTaskOps(context, todoProvider) {

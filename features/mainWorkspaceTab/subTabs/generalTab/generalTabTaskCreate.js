@@ -1,7 +1,7 @@
 // File: features/subTabs/general/generalTabTaskCreate.js
 const vscode = require('vscode');
-const { recordHistory } = require('../../commands/historyOps');
-const { logEvent } = require('../../engine/logger');
+const { recordHistory } = require('../../../commands/historyOps');
+const { logEvent } = require('../../../engine/logger');
 
 function registerGeneralTabTaskCreate(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.tabTask', async (node) => {

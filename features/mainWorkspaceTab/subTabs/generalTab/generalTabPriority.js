@@ -1,6 +1,6 @@
 // File: features/subTabs/general/generalTabPriority.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
+const { logEvent } = require('../../../engine/logger');
 
 function registerGeneralTabPriority(context, todoProvider) {
 

@@ -1,6 +1,6 @@
 // File: features/subTabs/recycle/recycleTabWipe.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
+const { logEvent } = require('../../../engine/logger');
 
 function registerRecycleTabWipe(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.recDeleteAll', async () => {

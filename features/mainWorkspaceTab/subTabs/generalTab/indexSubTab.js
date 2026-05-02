@@ -3,9 +3,9 @@ const { registerGeneralTabPriority } = require('./generalTabPriority');
 const { registerGeneralTabExport }   = require('./generalTabExport');
 const { registerGeneralTabDelete }   = require('./generalTabDelete');
 const { registerGeneralTabTaskCreate } = require('./generalTabTaskCreate');
-const { recordHistory } = require('../../commands/historyOps');
-const { logEvent }      = require('../../engine/logger');
-const { pickTag }       = require('../../subTabTasks/general/generalTaskTag');
+const { recordHistory } = require('../../../commands/historyOps');
+const { logEvent }      = require('../../../engine/logger');
+const { pickTag }       = require('../../subTabTasks/generalTask/generalTaskTag');
 const vscode = require('vscode');
 
 function registerGeneralTabOps(context, todoProvider, scanWorkspace) {

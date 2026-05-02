@@ -1,7 +1,7 @@
 // File: features/subTabs/recycle/recycleTabRestoreAll.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
-const { recordHistory } = require('../../commands/historyOps');
+const { logEvent } = require('../../../engine/logger');
+const { recordHistory } = require('../../../commands/historyOps');
 
 function registerRecycleTabRestoreAll(context, todoProvider) {
     // BUG 8 FIX: jargon.recRestoreAll was in package.json but NEVER registered anywhere

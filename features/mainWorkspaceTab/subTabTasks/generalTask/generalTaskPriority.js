@@ -1,6 +1,6 @@
 // File: features/subTabTasks/general/generalTaskPriority.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
+const { logEvent } = require('../../../engine/logger');
 
 /**
  * Handle Task-Level Priority (Star/Unstar Toggle).

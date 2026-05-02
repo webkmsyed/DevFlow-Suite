@@ -1,6 +1,6 @@
 // File: features/subTabTasks/general/generalTaskCopy.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
+const { logEvent } = require('../../../engine/logger');
 
 function registerGeneralTaskCopy(context) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.taskCopy', async (node) => {

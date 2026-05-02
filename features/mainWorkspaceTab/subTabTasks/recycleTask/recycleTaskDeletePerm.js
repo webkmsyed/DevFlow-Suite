@@ -1,6 +1,6 @@
 // File: features/subTabTasks/recycle/recycleTaskDeletePerm.js
 const vscode = require('vscode');
-const { logEvent } = require('../../engine/logger');
+const { logEvent } = require('../../../engine/logger');
 
 function registerRecycleTaskDeletePerm(context, todoProvider) {
     // 💀 Command: Delete Permanent (jargon.taskDelPerm)
