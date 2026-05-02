@@ -38,33 +38,48 @@ function registerTimeline(context) {
                 await context.globalState.update('timelineMode', msg.mode);
             }
             if (msg.command === 'exportLogs') {
-                vscode.commands.executeCommand('jargon.exportTimeline');
+                vscode.commands.executeCommand('jargon.exportTimeline', msg.data);
             }
         });
 
         currentPanel.onDidDispose(() => { currentPanel = null; }, null, context.subscriptions);
     }));
 
-    // ── EXPORT TIMELINE (PREVIEW FIRST) ───────────────────────────────────
-    context.subscriptions.push(vscode.commands.registerCommand('jargon.exportTimeline', async () => {
-        const logs = context.globalState.get('auditLogs', []) || [];
+    // ── EXPORT TIMELINE (DIRECT SAVE + PREVIEW) ─────────────────────────
+    context.subscriptions.push(vscode.commands.registerCommand('jargon.exportTimeline', async (filteredLogs) => {
+        const logs = Array.isArray(filteredLogs) ? filteredLogs : (context.globalState.get('auditLogs', []) || []);
         if (logs.length === 0) {
             vscode.window.showInformationMessage('DevFlow: No timeline logs to export.');
             return;
         }
 
         const format = await vscode.window.showQuickPick(['Markdown (.md)', 'CSV (.csv)', 'JSON (.json)', 'HTML (Printable)'], {
-            placeHolder: 'Select export format to preview'
+            placeHolder: 'Select export format'
         });
 
         if (!format) return;
 
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        let ext = '.md';
+        if (format.includes('JSON')) ext = '.json';
+        else if (format.includes('CSV')) ext = '.csv';
+        else if (format.includes('HTML')) ext = '.html';
+
+        const defaultUri = workspaceRoot ? vscode.Uri.file(require('path').join(workspaceRoot, `devflow-timeline-export${ext}`)) : undefined;
+
+        const uri = await vscode.window.showSaveDialog({
+            defaultUri: defaultUri,
+            filters: ext === '.html' ? {'HTML': ['html']} : 
+                     ext === '.json' ? {'JSON': ['json']} : 
+                     ext === '.csv' ? {'CSV': ['csv']} : {'Markdown': ['md']}
+        });
+
+        if (!uri) return;
+
         let content = '';
-        let language = 'plaintext';
 
         if (format.includes('JSON')) {
             content = JSON.stringify(logs, null, 2);
-            language = 'json';
         } else if (format.includes('CSV')) {
             content = 'Date,Time,Action,Title,Movement,File,Line,Starred\n' + 
                 logs.map(l => {
@@ -73,7 +88,6 @@ function registerTimeline(context) {
                     const movement = matches[1] ? matches[1][1] : '';
                     return `"${l.date}","${l.time}","${l.action}","${(title||'').replace(/"/g, '""')}","${movement}","${l.file||''}","${l.line||''}","${l.isStarred ? 'Yes' : 'No'}"`;
                 }).join('\n');
-            language = 'csv';
         } else if (format.includes('HTML')) {
             content = `<!DOCTYPE html>
 <html>
@@ -114,7 +128,6 @@ function registerTimeline(context) {
   </table>
 </body>
 </html>`;
-            language = 'html';
         } else {
             // Markdown Table
             content = '# DevFlow Timeline Export\n\n';
@@ -128,18 +141,24 @@ function registerTimeline(context) {
                 const star = l.isStarred ? '⭐' : '';
                 content += `| ${l.date || ''} | ${l.time || ''} | **${l.action || ''}** | ${title} | ${movement} | ${file} | ${star} |\n`;
             });
-            language = 'markdown';
         }
 
         try {
-            const document = await vscode.workspace.openTextDocument({
-                content: content,
-                language: language
-            });
-            await vscode.window.showTextDocument(document, { preview: true });
-            vscode.window.showInformationMessage(`DevFlow: Preview ready. Press Ctrl+S to save the file.`);
+            await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
+            
+            // Show preview automatically
+            if (ext === '.html') {
+                // Open HTML in default browser for printing
+                vscode.env.openExternal(uri);
+            } else {
+                // Open inside VS Code editor
+                const doc = await vscode.workspace.openTextDocument(uri);
+                await vscode.window.showTextDocument(doc, { preview: true });
+            }
+            
+            vscode.window.showInformationMessage(`DevFlow: Timeline saved successfully!`);
         } catch (e) {
-            vscode.window.showErrorMessage(`DevFlow: Failed to preview timeline - ${e.message}`);
+            vscode.window.showErrorMessage(`DevFlow: Failed to save timeline - ${e.message}`);
         }
     }));
 
@@ -240,7 +259,7 @@ function getHTML(logs, savedMode) {
   <button class="btn" onclick="clearDates()">Clear</button>
   <button class="btn" id="starFilterBtn" onclick="toggleStarFilter()">⭐ Starred</button>
   <button class="btn" onclick="vscode.postMessage({command:'refresh'})">↻ Sync</button>
-  <button class="btn" onclick="vscode.postMessage({command:'exportLogs'})">💾 Export</button>
+  <button class="btn" onclick="handleExport()">💾 Export</button>
   <button class="btn mode-btn" id="modeBtn" onclick="toggleMode()" title="Toggle dark/light">${initIcon}</button>
 </div>
 <div class="search-bar">
@@ -287,6 +306,10 @@ function getHTML(logs, savedMode) {
     document.getElementById('dateTo').value = '';
     render();
   }
+  
+  function handleExport() {
+    vscode.postMessage({ command: 'exportLogs', data: window.currentFilteredLogs || allLogs });
+  }
 
   function render() {
     const q = document.getElementById('searchInput').value.toLowerCase();
@@ -300,6 +323,8 @@ function getHTML(logs, savedMode) {
       if (isStarOnly && !log.isStarred) return false;
       return true;
     });
+
+    window.currentFilteredLogs = filtered;
 
     document.getElementById('countLabel').textContent = filtered.length + ' events';
 
