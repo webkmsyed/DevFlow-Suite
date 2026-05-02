@@ -5,11 +5,11 @@ let undoStack = [];
 let redoStack = [];
 const MAX_HISTORY = 20;
 
-// Helper: Deep Clone taaki original state kharab na ho
+// Helper: Deep Clone to avoid mutating original state
 const clone = (obj) => JSON.parse(JSON.stringify(obj));
 
 /**
- * Action hone se pehle state save karein
+ * Save state before performing an action
  */
 const recordHistory = (context) => {
     const snapshot = {
@@ -24,12 +24,12 @@ const recordHistory = (context) => {
     undoStack.push(snapshot);
     if (undoStack.length > MAX_HISTORY) undoStack.shift();
     
-    // Naya action hote hi Redo stack saaf honi chahiye
+    // Clear the Redo stack whenever a new action occurs
     redoStack = []; 
 };
 
 /**
- * Undo Logic: Ek kadam piche
+ * Undo Logic: Step backwards
  */
 async function undo(context) {
     if (undoStack.length === 0) {
@@ -37,7 +37,7 @@ async function undo(context) {
         return;
     }
 
-    // Current state ko Redo stack mein bhejein
+    // Send current state to Redo stack
     const currentState = {
         manualTasks: clone(context.globalState.get('manualTasks', [])),
         priorityTasks: clone(context.globalState.get('priorityTasks', [])),
@@ -48,13 +48,13 @@ async function undo(context) {
     };
     redoStack.push(currentState);
 
-    // Pichli state nikaalein aur apply karein
+    // Pop previous state and apply
     const prevState = undoStack.pop();
     await updateState(context, prevState);
 }
 
 /**
- * Redo Logic: Ek kadam aage
+ * Redo Logic: Step forwards
  */
 async function redo(context) {
     if (redoStack.length === 0) {
@@ -62,7 +62,7 @@ async function redo(context) {
         return;
     }
 
-    // Current state ko Undo stack mein wapas bhejein
+    // Send current state back to Undo stack
     const currentState = {
         manualTasks: clone(context.globalState.get('manualTasks', [])),
         priorityTasks: clone(context.globalState.get('priorityTasks', [])),
@@ -73,7 +73,7 @@ async function redo(context) {
     };
     undoStack.push(currentState);
 
-    // Agli state nikaalein aur apply karein
+    // Pop next state and apply
     const nextState = redoStack.pop();
     await updateState(context, nextState);
 }
@@ -90,5 +90,5 @@ async function updateState(context, state) {
     await context.globalState.update('fileComments', state.fileComments);
 }
 
-// 🔥 Sirf functions export karein, registration workspaceOps mein hai
+// 🔥 Only export functions, registration is handled in workspaceOps
 module.exports = { recordHistory, undo, redo };

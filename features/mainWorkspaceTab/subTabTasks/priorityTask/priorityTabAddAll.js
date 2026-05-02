@@ -8,7 +8,7 @@ function registerPriorityTabAddAll(context, todoProvider) {
         const manual = context.globalState.get('manualTasks', []) || [];
         const scanned = context.globalState.get('fileComments', []) || [];
 
-        // Identity Fix: Sabko unique IDs ke sath dump karein
+        // Ensure all items are added with unique identifiers
         manual.forEach(t => {
             if (!pri.some(p => p.id === t.id)) {
                 pri.push({ ...t, type: 'task', isScanned: false });

@@ -6,15 +6,15 @@ const triggerTimelineRefresh = () => {
     vscode.commands.executeCommand('jargon.internalRefreshTimeline');
 };
 
-// 🛡️ MUTEX LOCK: Taaki ek waqt mein ek hi log likha jaye
+// 🛡️ MUTEX LOCK: Ensure only one log is written at a time
 let isLogging = false;
 const logQueue = [];
 
 const logEvent = async (context, action, details, file = null, line = null) => {
-    // Log details ko queue mein daalo
+    // Add log details to the queue
     logQueue.push({ action, details, file, line, timestamp: Date.now() });
 
-    // Agar pehle se koi log process ho raha hai, toh ruk jao
+    // If a log is already being processed, wait
     if (isLogging) return;
 
     isLogging = true;
@@ -22,7 +22,7 @@ const logEvent = async (context, action, details, file = null, line = null) => {
     while (logQueue.length > 0) {
         const currentItem = logQueue.shift();
         
-        // 🔥 FRESH FETCH: Har baar state se naye logs uthao
+        // 🔥 FRESH FETCH: Always fetch fresh logs from state
         let logs = [...(context.globalState.get('auditLogs', []))];
         
         const now = new Date(currentItem.timestamp);
@@ -41,7 +41,7 @@ const logEvent = async (context, action, details, file = null, line = null) => {
         };
 
         logs.unshift(newEvent);
-        if (logs.length > 150) logs.pop(); // Thoda limit badha di hai
+        if (logs.length > 150) logs.pop(); // Retain up to 150 logs
         
         await context.globalState.update('auditLogs', logs);
     }
