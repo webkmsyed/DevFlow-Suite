@@ -90,7 +90,7 @@ function activate(context) {
 
     // ── Sub-Tab Modules ────────────────────────────────────────────────────
     const userTabMod    = safeRequire('./features/mainWorkspaceTab/subTabs/userCreatedTab/indexSubTab.js');
-    const userTaskMod   = safeRequire('./features/mainWorkspaceTab/subTabTasks/userCreatedTask/indexSubTabTasks.js');
+
     const genTabMod     = safeRequire('./features/mainWorkspaceTab/subTabs/generalTab/indexSubTab.js');
     const genTaskMod    = safeRequire('./features/mainWorkspaceTab/subTabTasks/generalTask/indexSubTabTasks.js');
     const priTabMod     = safeRequire('./features/mainWorkspaceTab/subTabs/priorityTab/indexSubTab.js');
@@ -99,7 +99,7 @@ function activate(context) {
     const recTaskMod    = safeRequire('./features/mainWorkspaceTab/subTabTasks/recycleTask/indexSubTabTasks.js');
 
     if (userTabMod) safeRun('userCreatedTabOps',  () => userTabMod.registerUserCreatedTabOps(context, todoProvider, scanWorkspaceForComments));
-    if (userTaskMod) safeRun('userCreatedTaskOps', () => userTaskMod.registerUserCreatedTaskOps(context, todoProvider));
+
     if (genTabMod)  safeRun('generalTabOps',    () => genTabMod.registerGeneralTabOps(context, todoProvider, scanWorkspaceForComments));
     if (genTaskMod) safeRun('generalTaskOps',   () => genTaskMod.registerGeneralTaskOps(context, todoProvider));
     if (priTabMod)  safeRun('priorityTabOps',   () => priTabMod.registerPriorityTabOps(context, todoProvider));
