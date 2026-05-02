@@ -3,13 +3,16 @@ const vscode = require('vscode');
 const { logEvent } = require('../../engine/logger');
 
 function registerGeneralTaskCopy(context) {
-    // 📋 Command: Copy Task (jargon.taskCopy)
     context.subscriptions.push(vscode.commands.registerCommand('jargon.taskCopy', async (node) => {
-        if (node) {
-            await vscode.env.clipboard.writeText(node.originalText);
-            logEvent(context, 'Copy', `'${node.originalText}' 'Action ➔ Clipboard'`, node.file, node.line);
-            vscode.window.showInformationMessage("Task copied to clipboard!");
+        if (!node) return;
+        const text = node.originalText || node.label || node.text || '';
+        if (!text) {
+            vscode.window.showWarningMessage('DevFlow: Nothing to copy.');
+            return;
         }
+        await vscode.env.clipboard.writeText(text);
+        logEvent(context, 'Copy', `'${text}' 'Action -> Clipboard'`, node.file, node.line);
+        vscode.window.showInformationMessage('DevFlow: Task copied to clipboard!');
     }));
 }
 

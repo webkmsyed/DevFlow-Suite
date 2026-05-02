@@ -2,7 +2,7 @@
 const vscode = require('vscode');
 const {
     getRoots, getStandardItems, getPriorityItems,
-    getPriorityFolderItems, getRecycleItems, getSearchResults
+    getPriorityFolderItems, getRecycleItems, getRecycleFolderItems, getSearchResults
 } = require('./providers/treeRenderer');
 
 class TodoProvider {
@@ -25,25 +25,32 @@ class TodoProvider {
         const treeItem = new vscode.TreeItem(element.label, element.collapsibleState);
         treeItem.contextValue = element.contextValue || '';
 
-        // FIX: Use _vsTreeId for priority items to avoid duplicate ID conflicts
+        // Use _vsTreeId for priority items to avoid duplicate ID conflicts
         treeItem.id = element._vsTreeId || (element.id ? String(element.id) : undefined);
         treeItem.iconPath = element.iconPath;
 
-        // --- Tag Display: FIX - tag at START of label ---
-        const tags = this.context.globalState.get('itemTags', {}) || {};
+        // ── Tag Display ─────────────────────────────────────────────────────
+        const tags    = this.context.globalState.get('itemTags', {}) || {};
         const itemKey = element.id ? String(element.id) : `${element.file}:${element.line}`;
-        const folderKey = `folder:${element.originalText}`;
-        const activeTag = (element.contextValue === 'standardTab') ? tags[folderKey] : tags[itemKey];
+        const folderKey  = `folder:${element.originalText}`;
+
+        // Folder-level tags shown on tab headers
+        const isTabHeader = ['generalTab', 'userTab', 'standardTab'].includes(element.contextValue);
+        const activeTag   = isTabHeader ? tags[folderKey] : tags[itemKey];
 
         if (activeTag) {
-            // FIX: Tag at START of label, not at end as description
             treeItem.label = `${activeTag} ${element.label}`;
         } else if (element.description) {
             treeItem.description = element.description;
         }
 
-        // Priority emoji tags (already at start — preserved)
-        if (treeItem.contextValue && treeItem.contextValue.includes('priority') && treeItem.contextValue !== 'priorityTab' && treeItem.contextValue !== 'priorityFolder') {
+        // Priority emoji tags
+        if (
+            treeItem.contextValue &&
+            treeItem.contextValue.includes('priority') &&
+            treeItem.contextValue !== 'priorityTab' &&
+            treeItem.contextValue !== 'priorityFolder'
+        ) {
             const priTags = this.context.globalState.get('priorityItemTags', {}) || {};
             const id = element.id || `${element.file}:${element.line}`;
             if (priTags[id]) {
@@ -52,7 +59,7 @@ class TodoProvider {
             }
         }
 
-        // Click to open file
+        // Click to open file (for tasks with a source file)
         if (element.file) {
             treeItem.command = {
                 command: 'jargon.openFile',
@@ -72,10 +79,30 @@ class TodoProvider {
 
         if (!element) return getRoots(this.context);
 
-        if (element.contextValue === 'priorityTab') return getPriorityItems(this.context);
-        if (element.contextValue === 'priorityFolder') return getPriorityFolderItems(this.context, element.originalText);
-        if (element.contextValue === 'standardTab') return getStandardItems(this.context, element.originalText || element.label);
-        if (element.contextValue === 'recycleTab') return getRecycleItems(this.context);
+        // Standard folders (General Workspace + user folders)
+        if (['generalTab', 'userTab', 'standardTab'].includes(element.contextValue)) {
+            return getStandardItems(this.context, element.originalText || element.label);
+        }
+
+        // Priority tab
+        if (element.contextValue === 'priorityTab') {
+            return getPriorityItems(this.context);
+        }
+
+        // Priority folder (sub-folder inside Priority Tab)
+        if (element.contextValue === 'priorityFolder') {
+            return getPriorityFolderItems(this.context, element.originalText || element.label);
+        }
+
+        // Recycle bin
+        if (element.contextValue === 'recycleTab') {
+            return getRecycleItems(this.context);
+        }
+
+        // Recycle folder group
+        if (element.contextValue === 'recycleFolder') {
+            return getRecycleFolderItems(this.context, element.originalText || element.label);
+        }
 
         return [];
     }

@@ -1,21 +1,11 @@
 // File: features/subTabTasks/recycle/recycleTaskTag.js
-const vscode = require('vscode');
+// NOTE: Recycle items use the same jargon.taskTag command (already registered in generalTaskTag.js).
+// This file is kept for module compatibility but registers nothing to avoid duplicate command errors.
+// The jargon.taskTag command handles recycleTask contextValue automatically via package.json menus.
 
 function registerRecycleTaskTag(context, todoProvider) {
-    context.subscriptions.push(vscode.commands.registerCommand('jargon.recycleTaskTag', async (node) => {
-        if (!node) return;
-        const tag = await vscode.window.showInputBox({ prompt: `Tag for Trash Item: "${node.originalText}"` });
-        
-        if (tag !== undefined) {
-            let tagsDict = context.globalState.get('itemTags', {}) || {};
-            const itemKey = node.id || `${node.file}:${node.line}`; 
-            
-            if (tag.trim().toLowerCase() === "clear") delete tagsDict[itemKey];
-            else if (tag.trim() !== "") tagsDict[itemKey] = tag.trim();
-
-            await context.globalState.update('itemTags', tagsDict);
-            todoProvider.refresh();
-        }
-    }));
+    // intentionally empty — jargon.taskTag is already registered globally in generalTaskTag.js
+    // and handles all contextValues including recycleTask
 }
+
 module.exports = { registerRecycleTaskTag };

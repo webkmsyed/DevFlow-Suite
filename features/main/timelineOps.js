@@ -259,4 +259,4 @@ function getHTML(logs, savedMode) {
 </html>`;
 }
 
-module.exports = { registerTimeline };a
+module.exports = { registerTimeline };

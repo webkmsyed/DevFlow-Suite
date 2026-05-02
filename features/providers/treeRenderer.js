@@ -8,26 +8,28 @@ function getRoots(context) {
         {
             label: 'General Workspace',
             originalText: 'General Workspace',
-            contextValue: 'generalTab',           // ← FIXED: was 'standardTab'
+            contextValue: 'generalTab',
             collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
             iconPath: new vscode.ThemeIcon('archive')
         },
         ...userFolders.map(f => ({
             label: f,
             originalText: f,
-            contextValue: 'userTab',              // ← FIXED: was 'standardTab'
+            contextValue: 'userTab',
             isUserFolder: true,
             collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
             iconPath: new vscode.ThemeIcon('folder')
         })),
         {
             label: 'Priority Tab',
+            originalText: 'Priority Tab',
             contextValue: 'priorityTab',
             collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
             iconPath: new vscode.ThemeIcon('star-full')
         },
         {
             label: 'Recycle Bin',
+            originalText: 'Recycle Bin',
             contextValue: 'recycleTab',
             collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
             iconPath: new vscode.ThemeIcon('trash')
@@ -80,8 +82,8 @@ function getStandardItems(context, folderName) {
     }
 
     let combined = [
-        ...manual.map(t => formatTask(t, 'standardTask')),
-        ...scanned.map(c => formatTask(c, 'scannedTask'))
+        ...manual.map(t => formatTask(t, 'standardTask', folderName)),
+        ...scanned.map(c => formatTask(c, 'scannedTask', folderName))
     ];
 
     // Apply sort
@@ -128,19 +130,41 @@ function getPriorityFolderItems(context, folderName) {
 // ── Recycle Bin ───────────────────────────────────────────────────────────
 function getRecycleItems(context) {
     const trashData = context.globalState.get('trashData', []) || [];
-    return trashData.map(t => ({
-        ...t,
-        label: t.text || 'Unknown',
-        contextValue: 'recycleTask',
-        collapsibleState: vscode.TreeItemCollapsibleState.None,
-        description: `← ${t.deletedFrom || 'Unknown'}`,
-        file: t.originalFile || t.file || null,
-        line: t.originalLine || t.line || null,
-        iconPath: new vscode.ThemeIcon(
-            (t.originalFile || t.file) ? 'code' : 'record',
-            new vscode.ThemeColor((t.originalFile || t.file) ? 'charts.blue' : 'charts.green')
-        )
+
+    // Group recycled items by their source folder
+    const folderSet = new Set();
+    const standaloneItems = [];
+
+    trashData.forEach(t => {
+        const from = t.deletedFrom || 'Unknown';
+        // Items that came from named folders get grouped; simple items stay flat
+        folderSet.add(from);
+    });
+
+    // If only one source, show flat list; if multiple, show grouped by folder
+    if (folderSet.size <= 1) {
+        // Flat list — simpler UX
+        return trashData.map(t => formatRecycleTask(t));
+    }
+
+    // Grouped by deleted-from folder
+    const folders = Array.from(folderSet).map(fName => ({
+        label: fName,
+        originalText: fName,
+        contextValue: 'recycleFolder',
+        collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
+        iconPath: new vscode.ThemeIcon('folder-opened'),
+        _recycleFolder: fName
     }));
+
+    return folders;
+}
+
+function getRecycleFolderItems(context, folderName) {
+    const trashData = context.globalState.get('trashData', []) || [];
+    return trashData
+        .filter(t => (t.deletedFrom || 'Unknown') === folderName)
+        .map(t => formatRecycleTask(t));
 }
 
 // ── Search Results ────────────────────────────────────────────────────────
@@ -152,22 +176,24 @@ function getSearchResults(context, query) {
 
     return [
         ...manual.filter(t => t.text && t.text.toLowerCase().includes(q)).map(t => ({
-            ...formatTask(t, 'searchResult'),
+            ...formatTask(t, 'searchResult', t.folder || 'General Workspace'),
             description: `📂 ${t.folder || 'General Workspace'}`
         })),
         ...scanned.filter(c => c.text && c.text.toLowerCase().includes(q)).map(c => ({
-            ...formatTask(c, 'searchResult'),
+            ...formatTask(c, 'searchResult', c.target || 'General Workspace'),
             description: `📄 ${c.file}:${c.line}`
         }))
     ];
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────
-function formatTask(item, contextValue) {
+function formatTask(item, contextValue, parentFolder) {
     return {
         ...item,
         label: item.text || '',
+        originalText: item.text || '',       // Always set originalText for copy/note/etc
         contextValue,
+        parentLabel: parentFolder || item.folder || item.target || 'General Workspace',
         collapsibleState: vscode.TreeItemCollapsibleState.None,
         iconPath: new vscode.ThemeIcon(
             item.file ? 'code' : 'record',
@@ -181,6 +207,7 @@ function formatPriorityTask(item) {
     return {
         ...item,
         label: item.text || '',
+        originalText: item.text || '',       // Always set originalText
         contextValue: 'priorityTask',
         collapsibleState: vscode.TreeItemCollapsibleState.None,
         _vsTreeId: `pri_${rawId}`,
@@ -191,11 +218,29 @@ function formatPriorityTask(item) {
     };
 }
 
+function formatRecycleTask(item) {
+    return {
+        ...item,
+        label: item.text || 'Unknown',
+        originalText: item.text || 'Unknown', // Always set originalText
+        contextValue: 'recycleTask',
+        collapsibleState: vscode.TreeItemCollapsibleState.None,
+        description: `← ${item.deletedFrom || 'Unknown'}`,
+        file: item.originalFile || item.file || null,
+        line: item.originalLine || item.line || null,
+        iconPath: new vscode.ThemeIcon(
+            (item.originalFile || item.file) ? 'code' : 'record',
+            new vscode.ThemeColor((item.originalFile || item.file) ? 'charts.blue' : 'charts.green')
+        )
+    };
+}
+
 module.exports = {
     getRoots,
     getStandardItems,
     getPriorityItems,
     getPriorityFolderItems,
     getRecycleItems,
+    getRecycleFolderItems,
     getSearchResults
 };
