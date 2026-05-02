@@ -53,7 +53,7 @@ function registerTimeline(context) {
             return;
         }
 
-        const format = await vscode.window.showQuickPick(['Markdown (.md)', 'CSV (.csv)', 'JSON (.json)'], {
+        const format = await vscode.window.showQuickPick(['Markdown (.md)', 'CSV (.csv)', 'JSON (.json)', 'HTML (Printable)'], {
             placeHolder: 'Select export format to preview'
         });
 
@@ -74,17 +74,59 @@ function registerTimeline(context) {
                     return `"${l.date}","${l.time}","${l.action}","${(title||'').replace(/"/g, '""')}","${movement}","${l.file||''}","${l.line||''}","${l.isStarred ? 'Yes' : 'No'}"`;
                 }).join('\n');
             language = 'csv';
+        } else if (format.includes('HTML')) {
+            content = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>DevFlow Timeline Export</title>
+<style>
+  body { font-family: -apple-system, sans-serif; padding: 20px; color: #333; }
+  table { border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 13px; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+  th { background-color: #f4f4f4; }
+  @media print {
+    body { padding: 0; }
+    button { display: none; }
+  }
+</style>
+</head>
+<body>
+  <h2>DevFlow Timeline Export</h2>
+  <button onclick="window.print()" style="padding:8px 16px; cursor:pointer; margin-bottom: 20px; background: #0066cc; color: white; border: none; border-radius: 4px;">🖨️ Print to PDF</button>
+  <table>
+    <thead>
+      <tr><th>Date</th><th>Time</th><th>Action</th><th>Title</th><th>Movement</th><th>File</th><th>Starred</th></tr>
+    </thead>
+    <tbody>
+      ${logs.map(l => {
+        const matches = [...(l.details || '').matchAll(/'([^']*)'/g)];
+        const title = (matches[0] ? matches[0][1] : l.details) || '';
+        const movement = (matches[1] ? matches[1][1] : '') || '';
+        const file = l.file ? '<code>' + l.file + '</code>' + (l.line ? ':' + l.line : '') : '';
+        const star = l.isStarred ? '⭐' : '';
+        return '<tr>' +
+          '<td>' + (l.date || '') + '</td><td>' + (l.time || '') + '</td><td><strong>' + (l.action || '') + '</strong></td>' +
+          '<td>' + title + '</td><td>' + movement + '</td><td>' + file + '</td><td>' + star + '</td>' +
+        '</tr>';
+      }).join('\n')}
+    </tbody>
+  </table>
+</body>
+</html>`;
+            language = 'html';
         } else {
-            // Markdown
+            // Markdown Table
             content = '# DevFlow Timeline Export\n\n';
+            content += '| Date | Time | Action | Title | Movement | File | Starred |\n';
+            content += '|---|---|---|---|---|---|---|\n';
             logs.forEach(l => {
                 const matches = [...(l.details || '').matchAll(/'([^']*)'/g)];
-                const title = matches[0] ? matches[0][1] : l.details;
-                const movement = matches[1] ? matches[1][1] : '';
-                content += `- **[${l.date} ${l.time}]** [${l.action}] ${title} ${movement ? `(-> ${movement})` : ''}`;
-                if (l.file) content += ` (File: \`${l.file}\`${l.line ? `:${l.line}` : ''})`;
-                if (l.isStarred) content += ` ⭐`;
-                content += '\n';
+                const title = (matches[0] ? matches[0][1] : l.details || '').replace(/\|/g, '\\|');
+                const movement = (matches[1] ? matches[1][1] : '').replace(/\|/g, '\\|');
+                const file = l.file ? `\`${l.file}\`${l.line ? `:${l.line}` : ''}` : '';
+                const star = l.isStarred ? '⭐' : '';
+                content += `| ${l.date || ''} | ${l.time || ''} | **${l.action || ''}** | ${title} | ${movement} | ${file} | ${star} |\n`;
             });
             language = 'markdown';
         }
