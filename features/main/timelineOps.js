@@ -45,7 +45,7 @@ function registerTimeline(context) {
         currentPanel.onDidDispose(() => { currentPanel = null; }, null, context.subscriptions);
     }));
 
-    // ── EXPORT TIMELINE ──────────────────────────────────────────────────
+    // ── EXPORT TIMELINE (PREVIEW FIRST) ───────────────────────────────────
     context.subscriptions.push(vscode.commands.registerCommand('jargon.exportTimeline', async () => {
         const logs = context.globalState.get('auditLogs', []) || [];
         if (logs.length === 0) {
@@ -53,20 +53,19 @@ function registerTimeline(context) {
             return;
         }
 
-        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-        const defaultUri = workspaceRoot ? vscode.Uri.file(require('path').join(workspaceRoot, 'devflow-timeline-export.md')) : undefined;
-
-        const uri = await vscode.window.showSaveDialog({
-            defaultUri: defaultUri,
-            filters: { 'Markdown': ['md'], 'JSON': ['json'], 'CSV': ['csv'] }
+        const format = await vscode.window.showQuickPick(['Markdown (.md)', 'CSV (.csv)', 'JSON (.json)'], {
+            placeHolder: 'Select export format to preview'
         });
 
-        if (!uri) return;
+        if (!format) return;
 
         let content = '';
-        if (uri.fsPath.endsWith('.json')) {
+        let language = 'plaintext';
+
+        if (format.includes('JSON')) {
             content = JSON.stringify(logs, null, 2);
-        } else if (uri.fsPath.endsWith('.csv')) {
+            language = 'json';
+        } else if (format.includes('CSV')) {
             content = 'Date,Time,Action,Title,Movement,File,Line,Starred\n' + 
                 logs.map(l => {
                     const matches = [...(l.details || '').matchAll(/'([^']*)'/g)];
@@ -74,6 +73,7 @@ function registerTimeline(context) {
                     const movement = matches[1] ? matches[1][1] : '';
                     return `"${l.date}","${l.time}","${l.action}","${(title||'').replace(/"/g, '""')}","${movement}","${l.file||''}","${l.line||''}","${l.isStarred ? 'Yes' : 'No'}"`;
                 }).join('\n');
+            language = 'csv';
         } else {
             // Markdown
             content = '# DevFlow Timeline Export\n\n';
@@ -86,13 +86,18 @@ function registerTimeline(context) {
                 if (l.isStarred) content += ` ⭐`;
                 content += '\n';
             });
+            language = 'markdown';
         }
 
         try {
-            await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
-            vscode.window.showInformationMessage(`DevFlow: Timeline exported successfully!`);
+            const document = await vscode.workspace.openTextDocument({
+                content: content,
+                language: language
+            });
+            await vscode.window.showTextDocument(document, { preview: true });
+            vscode.window.showInformationMessage(`DevFlow: Preview ready. Press Ctrl+S to save the file.`);
         } catch (e) {
-            vscode.window.showErrorMessage(`DevFlow: Failed to export timeline - ${e.message}`);
+            vscode.window.showErrorMessage(`DevFlow: Failed to preview timeline - ${e.message}`);
         }
     }));
 
