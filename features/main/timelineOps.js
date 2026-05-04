@@ -40,9 +40,90 @@ function registerTimeline(context) {
             if (msg.command === 'exportLogs') {
                 vscode.commands.executeCommand('jargon.exportTimeline', msg.data);
             }
+            if (msg.command === 'importLogs') {
+                vscode.commands.executeCommand('jargon.importTimeline');
+            }
         });
 
+        // CHECK FOR FOLDERS on open
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        if (workspaceRoot) {
+            const fs = require('fs');
+            const path = require('path');
+            const tlPath = path.join(workspaceRoot, 'timelineLog', 'logs.json');
+            let foundPath = fs.existsSync(tlPath) ? tlPath : null;
+            
+            if (foundPath && !context.workspaceState.get('promptedTimelineImport')) {
+                context.workspaceState.update('promptedTimelineImport', true);
+                const folderName = path.basename(path.dirname(foundPath));
+                vscode.window.showInformationMessage(
+                    `${folderName} file exist, want to import in your timeline? or 'you want your timeline?'`,
+                    'Import', 'Keep Mine'
+                ).then(selection => {
+                    if (selection === 'Import') {
+                        vscode.commands.executeCommand('jargon.importTimeline', foundPath);
+                    }
+                });
+            }
+        }
+
         currentPanel.onDidDispose(() => { currentPanel = null; }, null, context.subscriptions);
+    }));
+
+    // ── IMPORT TIMELINE (PROJECT FOLDERS) ─────────────────────────
+    context.subscriptions.push(vscode.commands.registerCommand('jargon.importTimeline', async (targetPath) => {
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        if (!workspaceRoot) return;
+        const fs = require('fs');
+        const path = require('path');
+        
+        let fileToImport = typeof targetPath === 'string' ? targetPath : null;
+        
+        if (!fileToImport) {
+            const uri = await vscode.window.showOpenDialog({
+                canSelectMany: false,
+                openLabel: 'Import Timeline Logs',
+                filters: { 'JSON': ['json'] }
+            });
+            if (uri && uri[0]) {
+                fileToImport = uri[0].fsPath;
+            }
+        }
+
+        if (!fileToImport) return;
+
+        try {
+            const content = fs.readFileSync(fileToImport, 'utf8');
+            const importedLogs = JSON.parse(content);
+            if (!Array.isArray(importedLogs)) throw new Error('not valid file format');
+            
+            if (importedLogs.length > 0 && typeof importedLogs[0] === 'object' && !('action' in importedLogs[0] || 'details' in importedLogs[0])) {
+                throw new Error('not valid - missing required log properties');
+            }
+            
+            const existingLogs = context.globalState.get('auditLogs', []) || [];
+            const merged = [...existingLogs];
+            const existingKeys = new Set(existingLogs.map(l => `${l.date}|${l.time}|${l.action}|${l.details}|${l.file}`));
+            
+            let addedCount = 0;
+            for (const log of importedLogs) {
+                if (typeof log !== 'object') continue;
+                const key = `${log.date}|${log.time}|${log.action}|${log.details}|${log.file}`;
+                if (!existingKeys.has(key)) {
+                    log.id = log.id || (Date.now() + Math.floor(Math.random() * 10000));
+                    merged.push(log);
+                    existingKeys.add(key);
+                    addedCount++;
+                }
+            }
+            
+            await context.globalState.update('auditLogs', merged);
+            vscode.window.showInformationMessage(`DevFlow: Successfully imported ${addedCount} new log(s).`);
+            
+            vscode.commands.executeCommand('jargon.internalRefreshTimeline');
+        } catch (e) {
+            vscode.window.showErrorMessage(`DevFlow: File is not valid - ${e.message}`);
+        }
     }));
 
     // ── EXPORT TIMELINE (DIRECT SAVE + PREVIEW) ─────────────────────────
@@ -53,13 +134,40 @@ function registerTimeline(context) {
             return;
         }
 
-        const format = await vscode.window.showQuickPick(['Markdown (.md)', 'CSV (.csv)', 'JSON (.json)', 'HTML (Printable)'], {
+        const format = await vscode.window.showQuickPick([
+            'Markdown (.md)', 'CSV (.csv)', 'JSON (.json)', 'HTML (Printable)',
+            'Project Folder (timelineLog)'
+        ], {
             placeHolder: 'Select export format'
         });
 
         if (!format) return;
 
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        
+        if (format.includes('Project Folder')) {
+            if (!workspaceRoot) {
+                vscode.window.showErrorMessage('DevFlow: You must be in a workspace to export to a project folder.');
+                return;
+            }
+            const folderName = 'timelineLog';
+            const fs = require('fs');
+            const path = require('path');
+            const dirPath = path.join(workspaceRoot, folderName);
+            const filePath = path.join(dirPath, 'logs.json');
+            try {
+                if (!fs.existsSync(dirPath)) {
+                    fs.mkdirSync(dirPath);
+                }
+                const content = JSON.stringify(logs, null, 2);
+                fs.writeFileSync(filePath, content, 'utf8');
+                vscode.window.showInformationMessage(`DevFlow: Timeline saved to project folder ${folderName} successfully!`);
+            } catch (e) {
+                vscode.window.showErrorMessage(`DevFlow: Failed to save to ${folderName} - ${e.message}`);
+            }
+            return;
+        }
+
         let ext = '.md';
         if (format.includes('JSON')) ext = '.json';
         else if (format.includes('CSV')) ext = '.csv';
@@ -259,6 +367,7 @@ function getHTML(logs, savedMode) {
   <button class="btn" onclick="clearDates()">Clear</button>
   <button class="btn" id="starFilterBtn" onclick="toggleStarFilter()">⭐ Starred</button>
   <button class="btn" onclick="vscode.postMessage({command:'refresh'})">↻ Sync</button>
+  <button class="btn" onclick="handleImport()">📥 Import</button>
   <button class="btn" onclick="handleExport()">💾 Export</button>
   <button class="btn mode-btn" id="modeBtn" onclick="toggleMode()" title="Toggle dark/light">${initIcon}</button>
 </div>
@@ -309,6 +418,10 @@ function getHTML(logs, savedMode) {
   
   function handleExport() {
     vscode.postMessage({ command: 'exportLogs', data: window.currentFilteredLogs || allLogs });
+  }
+
+  function handleImport() {
+    vscode.postMessage({ command: 'importLogs' });
   }
 
   function render() {

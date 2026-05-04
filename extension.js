@@ -78,6 +78,7 @@ function activate(context) {
     const workspaceMod  = safeRequire('./features/commands/workspaceOps.js');
     const historyMod    = safeRequire('./features/commands/historyOps.js');
     const noteMod       = safeRequire('./features/notes/noteEngine.js');
+    const pinMod        = safeRequire('./features/main/pinOps.js');
 
     if (searchMod)    safeRun('searchOps',    () => searchMod.registerSearch(context, todoProvider));
     if (filterMod)    safeRun('filterOps',    () => filterMod.registerFilter(context, todoProvider));
@@ -87,6 +88,7 @@ function activate(context) {
     if (workspaceMod) safeRun('workspaceOps', () => workspaceMod.registerWorkspaceCommands(context, todoProvider));
     if (noteMod)      safeRun('noteEngine',   () => noteMod.registerNoteCommands(context));
     if (historyMod)   safeRun('historyOps',   () => historyMod.recordHistory(context));
+    if (pinMod)       safeRun('pinOps',       () => pinMod.registerPinOps(context));
 
     // ── Sub-Tab Modules ────────────────────────────────────────────────────
     const userTabMod    = safeRequire('./features/mainWorkspaceTab/subTabs/userCreatedTab/indexSubTab.js');

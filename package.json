@@ -6,7 +6,7 @@
   "publisher": "webkmsyed",
   "engines": { "vscode": "^1.75.0" },
   "main": "./extension.js",
-  "activationEvents": ["onView:todo-explorer"],
+  "activationEvents": ["*"],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -59,9 +59,15 @@
       { "command": "jargon.taskRename",       "title": "Rename Task",            "icon": "$(edit)" },
       { "command": "jargon.taskRemovePri",    "title": "Remove from Priority",   "icon": "$(star-empty)" },
       { "command": "jargon.taskRestore",      "title": "Restore",                "icon": "$(arrow-up)" },
-      { "command": "jargon.taskDelPerm",      "title": "Delete Permanently",     "icon": "$(close)" }
+      { "command": "jargon.taskDelPerm",      "title": "Delete Permanently",     "icon": "$(close)" },
+      { "command": "jargon.pinCurrentFile",   "title": "Pin Current State",      "icon": "$(pin)" },
+      { "command": "jargon.viewPins",         "title": "View Local Pins",        "icon": "$(history)" }
     ],
     "menus": {
+      "editor/title": [
+        { "command": "jargon.pinCurrentFile",   "when": "resourceExtname != ''", "group": "navigation@1" },
+        { "command": "jargon.viewPins",         "when": "resourceExtname != ''", "group": "navigation@2" }
+      ],
       "view/title": [
         { "command": "jargon.mainFolder",       "when": "view == todo-explorer",                         "group": "navigation@1" },
         { "command": "jargon.mainSearch",       "when": "view == todo-explorer",                         "group": "navigation@2" },
