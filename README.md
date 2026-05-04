@@ -36,8 +36,25 @@ Use the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) to access DevFlow featu
 ## ⚙️ Extension Settings
 Customize DevFlow to your liking via the standard VS Code settings interface. Adjust your auto-pin frequency, sorting preferences, and more.
 
+## 📸 Screenshots & Previews
+> **Pro Tip:** Add a few GIFs or images here showing your extension in action! 
+> 
+> *Suggested visual additions:*
+> - *A GIF of pinning a file and opening the Git-style Diff view.*
+> - *A screenshot of the beautiful Vercel-style Local Pins Manager.*
+> - *A screenshot showing the main DevFlow Todo explorer and Timeline.*
+
+![DevFlow Preview](https://via.placeholder.com/800x400.png?text=DevFlow+Suite+Preview)
+
 ## 🤝 Contributing
 We welcome contributions! Please see our [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on how to build, test, and contribute to this repository.
 
 ## 📜 License
 This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+
+---
+
+<div align="center">
+  <strong>Built with ❤️ by <a href="https://webkmsyed.com">webkmsyed.com</a></strong><br>
+  Part of the <a href="https://jargoniseasy.com">jargoniseasy.com</a> ecosystem.
+</div>
