@@ -4,6 +4,7 @@
   "description": "Workspace task manager for developers",
   "version": "1.0.0",
   "publisher": "webkmsyed",
+  "icon": "resources/icon.png",
   "engines": { "vscode": "^1.75.0" },
   "main": "./extension.js",
   "activationEvents": ["*"],
