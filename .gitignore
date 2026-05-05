@@ -4,3 +4,4 @@ node_modules/
 .devflow-pins/
 .DS_Store
 *.log
+vsc-extension-quickstart.md
