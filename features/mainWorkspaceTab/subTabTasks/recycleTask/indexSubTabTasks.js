@@ -4,7 +4,7 @@ const { registerRecycleTaskDeletePerm } = require('./recycleTaskDeletePerm');
 const { registerRecycleTaskTag } = require('./recycleTaskTag');
 
 function registerRecycleTaskOps(context, todoProvider) {
-    // 🗑️ Recycle Bin ki saari task logic yahan rahegi
+    // Register all Recycle Bin task operations.
     registerRecycleTaskRestore(context, todoProvider);
     registerRecycleTaskDeletePerm(context, todoProvider);
     registerRecycleTaskTag(context, todoProvider);

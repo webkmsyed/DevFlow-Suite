@@ -22,6 +22,14 @@ function initScanner(context, todoProvider) {
             // These are preserved across scans. Auto-assignments are always re-evaluated.
             const manualAssignments = context.globalState.get('manualAssignments', {}) || {};
 
+            // Build a Set of trashed scanned-task keys so the scanner never re-surfaces them.
+            const trash = context.globalState.get('trashData', []) || [];
+            const trashedKeys = new Set(
+                trash
+                    .filter(t => t.isScanned && t.originalFile && t.originalLine)
+                    .map(t => `${t.originalFile}:${t.originalLine}`)
+            );
+
             const comments = [];
 
             for (const file of files) {
@@ -45,6 +53,9 @@ function initScanner(context, todoProvider) {
                     if (!commentText || commentText.startsWith('/')) return; // skip /// jsdoc
 
                     const key = `${relativePath}:${lineNum}`;
+
+                    // Skip comments that the user has already moved to the Recycle Bin.
+                    if (trashedKeys.has(key)) return;
 
                     let targetFolder = 'General Workspace';
 
