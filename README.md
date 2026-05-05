@@ -6,7 +6,7 @@
   <a href="https://github.com/webkmsyed/DevFlow-Suite/blob/main/CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-v1.0.0-green" alt="Changelog"></a>
   <a href="https://github.com/webkmsyed/DevFlow-Suite/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
   <br><br>
-  <strong>A <a href="https://jargoniseasy.com">jargoniseasy.com</a> product &nbsp;·&nbsp; Built by <a href="https://webkmsyed.com">Syed K.M.</a></strong>
+  <strong>A <a href="https://jargoniseasy.com">jargoniseasy.com</a> product &nbsp;·&nbsp; Built by <a href="https://webkmsyed.com">Syed Khishamuddin (webkmsyed).</a></strong>
 </div>
 
 ---
@@ -113,5 +113,5 @@ MIT License — see the [LICENSE](./LICENSE) file for details.
 <div align="center">
   <img src="resources/icon.png" alt="DevFlow Suite" width="48" /><br>
   <strong>DevFlow Suite</strong> — A <a href="https://jargoniseasy.com">jargoniseasy.com</a> product<br>
-  <sub>Built by <a href="https://webkmsyed.com">Syed K.M.</a> &nbsp;|&nbsp; <a href="https://github.com/webkmsyed/DevFlow-Suite">GitHub</a> &nbsp;|&nbsp; <a href="https://marketplace.visualstudio.com/items?itemName=jargoniseasy.devflow-suite">VS Code Marketplace</a></sub>
+  <sub>Built by <a href="https://webkmsyed.com">Syed Khishamuddin (webkmsyed)</a> &nbsp;|&nbsp; <a href="https://github.com/webkmsyed/DevFlow-Suite">GitHub</a> &nbsp;|&nbsp; <a href="https://marketplace.visualstudio.com/items?itemName=jargoniseasy.devflow-suite">VS Code Marketplace</a></sub>
 </div>
