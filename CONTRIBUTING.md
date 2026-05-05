@@ -8,7 +8,7 @@ First off, thank you for considering contributing to DevFlow Suite! It's people 
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/webkmsyed/DevFlow-Suite.git
    cd DevFlow-Suite
    ```
 
