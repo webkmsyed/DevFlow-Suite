@@ -14,6 +14,43 @@ function registerPinOps(context) {
         await createPin(true);
     }));
 
+    // ── Command: View All Workspace Pins (no active file required) ───
+    context.subscriptions.push(vscode.commands.registerCommand('jargon.viewAllPins', async () => {
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        if (!workspaceRoot) {
+            vscode.window.showWarningMessage('DevFlow: No workspace folder is open.');
+            return;
+        }
+
+        isShowingAllPins = true;
+
+        if (pinPanel) {
+            // Reuse existing panel but switch to All Pins mode
+            if (!currentPanelContext) {
+                currentPanelContext = { context, workspaceRoot, currentFilePath: '', fileName: '' };
+            }
+            currentPanelContext.context = context;
+            pinPanel.reveal(vscode.ViewColumn.Two);
+            renderPinPanel();
+            return;
+        }
+
+        pinPanel = vscode.window.createWebviewPanel(
+            'devFlowPins',
+            'All Workspace Pins',
+            vscode.ViewColumn.Two,
+            { enableScripts: true }
+        );
+
+        pinPanel.onDidDispose(() => {
+            pinPanel = null;
+            currentPanelContext = null;
+        }, null, context.subscriptions);
+
+        currentPanelContext = { context, workspaceRoot, currentFilePath: '', fileName: '' };
+        renderPinPanel();
+    }));
+
     context.subscriptions.push(vscode.commands.registerCommand('jargon.viewPins', async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {

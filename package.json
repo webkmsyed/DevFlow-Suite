@@ -62,7 +62,8 @@
       { "command": "jargon.taskRestore",      "title": "Restore",                "icon": "$(arrow-up)" },
       { "command": "jargon.taskDelPerm",      "title": "Delete Permanently",     "icon": "$(close)" },
       { "command": "jargon.pinCurrentFile",   "title": "Pin Current State",      "icon": "$(pin)" },
-      { "command": "jargon.viewPins",         "title": "View Local Pins",        "icon": "$(history)" }
+      { "command": "jargon.viewPins",         "title": "View Local Pins",        "icon": "$(history)" },
+      { "command": "jargon.viewAllPins",      "title": "All Workspace Pins",     "icon": "$(bookmark)" }
     ],
     "keybindings": [
       {
@@ -111,7 +112,8 @@
         { "command": "jargon.mainExport",       "when": "view == todo-explorer",                         "group": "navigation@7" },
         { "command": "jargon.mainUndo",         "when": "view == todo-explorer",                         "group": "navigation@8" },
         { "command": "jargon.mainRedo",         "when": "view == todo-explorer",                         "group": "navigation@9" },
-        { "command": "jargon.mainDelete",       "when": "view == todo-explorer",                         "group": "navigation@10" }
+        { "command": "jargon.mainDelete",       "when": "view == todo-explorer",                         "group": "navigation@10" },
+        { "command": "jargon.viewAllPins",      "when": "view == todo-explorer",                         "group": "navigation@11" }
       ],
       "view/item/context": [
 
