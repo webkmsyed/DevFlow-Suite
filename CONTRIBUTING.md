@@ -46,8 +46,8 @@ DevFlow Suite follows a modular, feature-based architecture (similar to modern f
 ## Guidelines
 
 - **Code Style:** Please ensure your code follows the existing style conventions. We use ESLint to maintain code quality.
-- **Commit Messages:** Follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification (e.g., `feat: added new tag system`, `fix: resolved path separator bug on windows`).
-- **Webviews:** When editing Webviews (like `pinOps.js` or `timelineOps.js`), strive for minimal, modern UI designs (Vercel-inspired). Avoid inline styles where possible unless dynamic, and utilize CSS variables for theme (`light`/`dark`) synchronization.
+- **Commit Messages:** Follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification. **Scopes are required** to identify the module affected (e.g., `feat(ui): add high-fidelity tag system`, `fix(core): resolve path separator logic`, `docs(readme): update author identity`). Common scopes include: `core`, `ui`, `engine`, `docs`, `config`, and `deps`.
+- **Webviews:** When editing Webviews (like `pinOps.js` or `timelineOps.js`), strive for minimal, modern UI designs (Vercel-inspired). Avoid inline styles where possible unless dynamic, and utilize CSS variables for theme synchronization.
 - **Testing:** If you add new functionality, please try to include basic tests inside the `test/` directory.
 
 ## Submitting Pull Requests
