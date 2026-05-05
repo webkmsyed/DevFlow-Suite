@@ -1,12 +1,12 @@
 // File: features/engine/logger.js
 const vscode = require('vscode');
 
-// 🔄 Auto-Refresh Trigger
+// Triggers a refresh of the Timeline Webview after every log write.
 const triggerTimelineRefresh = () => {
     vscode.commands.executeCommand('jargon.internalRefreshTimeline');
 };
 
-// 🛡️ MUTEX LOCK: Ensure only one log is written at a time
+// Mutex lock — ensures log entries are written sequentially without race conditions.
 let isLogging = false;
 const logQueue = [];
 
@@ -22,7 +22,7 @@ const logEvent = async (context, action, details, file = null, line = null) => {
     while (logQueue.length > 0) {
         const currentItem = logQueue.shift();
         
-        // 🔥 FRESH FETCH: Always fetch fresh logs from state
+        // Always fetch the latest state to avoid overwriting concurrent writes.
         let logs = [...(context.globalState.get('auditLogs', []))];
         
         const now = new Date(currentItem.timestamp);
@@ -30,7 +30,7 @@ const logEvent = async (context, action, details, file = null, line = null) => {
         const dateString = now.toLocaleDateString('en-US');
 
         const newEvent = {
-            id: currentItem.timestamp + Math.random(), // Unique ID fix
+            id: currentItem.timestamp + Math.random(), // Ensures unique IDs even for rapid successive events.
             date: dateString,
             time: timeString,
             action: currentItem.action,

@@ -33,6 +33,17 @@ Use the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) to access DevFlow featu
 - `DevFlow: Export Logs`
 - `DevFlow: Search Tasks`
 
+## ⌨️ Keyboard Shortcuts
+| Action | Windows / Linux | macOS |
+|---|---|---|
+| Pin Current File State | `Ctrl+Shift+P` twice | `Cmd+Shift+P` twice |
+| View Local Pins Panel | `Ctrl+Shift+L` | `Cmd+Shift+L` |
+| Open Activity Timeline | `Ctrl+Shift+T` | `Cmd+Shift+T` |
+| Search Tasks | `Ctrl+Shift+F` (in Explorer) | `Cmd+Shift+F` |
+| Scan / Refresh Workspace | `Ctrl+Shift+R` (in Explorer) | `Cmd+Shift+R` |
+
+> All shortcuts can be customized via **File → Preferences → Keyboard Shortcuts** in VS Code.
+
 ## ⚙️ Extension Settings
 Customize DevFlow to your liking via the standard VS Code settings interface. Adjust your auto-pin frequency, sorting preferences, and more.
 

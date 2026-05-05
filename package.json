@@ -63,6 +63,38 @@
       { "command": "jargon.pinCurrentFile",   "title": "Pin Current State",      "icon": "$(pin)" },
       { "command": "jargon.viewPins",         "title": "View Local Pins",        "icon": "$(history)" }
     ],
+    "keybindings": [
+      {
+        "command": "jargon.pinCurrentFile",
+        "key": "ctrl+shift+p ctrl+shift+p",
+        "mac": "cmd+shift+p cmd+shift+p",
+        "when": "editorFocus"
+      },
+      {
+        "command": "jargon.viewPins",
+        "key": "ctrl+shift+l",
+        "mac": "cmd+shift+l",
+        "when": "editorFocus"
+      },
+      {
+        "command": "jargon.openTimeline",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t",
+        "when": "viewItem"
+      },
+      {
+        "command": "jargon.mainSearch",
+        "key": "ctrl+shift+f",
+        "mac": "cmd+shift+f",
+        "when": "view == todo-explorer"
+      },
+      {
+        "command": "jargon.mainRefresh",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "view == todo-explorer"
+      }
+    ],
     "menus": {
       "editor/title": [
         { "command": "jargon.pinCurrentFile",   "when": "resourceExtname != ''", "group": "navigation@1" },

@@ -1,5 +1,7 @@
 # Contributing to DevFlow Suite
 
+**Repository:** [https://github.com/webkmsyed/DevFlow-Suite](https://github.com/webkmsyed/DevFlow-Suite)
+
 First off, thank you for considering contributing to DevFlow Suite! It's people like you that make DevFlow such a powerful tool for developers.
 
 ## Development Setup
