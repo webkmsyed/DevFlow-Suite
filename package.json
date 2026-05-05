@@ -5,6 +5,10 @@
   "version": "1.0.0",
   "publisher": "jargoniseasy",
   "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/webkmsyed/DevFlow-Suite.git"
+  },
   "engines": { "vscode": "^1.75.0" },
   "main": "./extension.js",
   "activationEvents": ["*"],
