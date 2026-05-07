@@ -1,56 +1,6 @@
 // File: features/subTabTasks/recycle/recycleTaskDeletePerm.js
 const vscode = require('vscode');
-
-// Helper: physically delete scanned comment lines from source files
-// Deletes one line at a time (sequential) to avoid VS Code range-adjustment conflicts
-// that silently drop lines when multiple ranges are applied in a single WorkspaceEdit.
-async function deleteFromSourceFiles(items) {
-    if (!vscode.workspace.workspaceFolders?.[0]) return;
-
-    const byFile = {};
-    for (const item of items) {
-        const f = item.originalFile || item.file;
-        const l = Number(item.originalLine || item.line);
-        if (f && l && !isNaN(l) && l > 0) {
-            if (!byFile[f]) byFile[f] = new Set();
-            byFile[f].add(l);
-        }
-    }
-
-    for (const [relFile, lineSet] of Object.entries(byFile)) {
-        try {
-            const fileUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, relFile);
-            // Sort descending: delete from bottom up so earlier line numbers stay valid
-            const sortedLines = [...lineSet].sort((a, b) => b - a);
-
-            for (const ln of sortedLines) {
-                // Re-open document each time so we always have fresh line count
-                const doc = await vscode.workspace.openTextDocument(fileUri);
-                if (ln > doc.lineCount) continue; // line no longer exists — skip
-
-                const edit = new vscode.WorkspaceEdit();
-                const isLastLine = ln === doc.lineCount;
-
-                if (isLastLine) {
-                    // Last line has no trailing newline — delete from end of previous line
-                    const prevLine = doc.lineAt(ln - 2); // 0-indexed
-                    edit.delete(fileUri, new vscode.Range(
-                        new vscode.Position(prevLine.range.end.line, prevLine.range.end.character),
-                        new vscode.Position(ln - 1, doc.lineAt(ln - 1).text.length)
-                    ));
-                } else {
-                    edit.delete(fileUri, new vscode.Range(
-                        new vscode.Position(ln - 1, 0),
-                        new vscode.Position(ln, 0)
-                    ));
-                }
-
-                await vscode.workspace.applyEdit(edit);
-                await doc.save();
-            }
-        } catch (e) { /* file may be read-only or deleted — skip */ }
-    }
-}
+const { deleteItemsFromFiles } = require('../../subTabs/recycleTab/recycleHelpers');
 
 function registerRecycleTaskDeletePerm(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.taskDelPerm', async (node) => {
@@ -58,51 +8,80 @@ function registerRecycleTaskDeletePerm(context, todoProvider) {
 
         let trash = context.globalState.get('trashData', []) || [];
 
-        // ── Folder node: delete all items in this recycle folder ──────────
+        // ── Folder node: permanently delete all items in this recycle folder ──
         if (node.contextValue === 'recycleFolder') {
             const folderName = node.originalText || node.label;
             const folderItems = trash.filter(t => (t.deletedFrom || 'Unknown') === folderName);
 
-            if (folderItems.length === 0 && !trash.some(t => t._isFolderMarker && t.deletedFrom === folderName)) {
+            const realItems = folderItems.filter(t => !t._isFolderMarker);
+            if (realItems.length === 0 && !folderItems.some(t => t._isFolderMarker)) {
                 vscode.window.showInformationMessage("DevFlow: No items found in this recycle folder.");
                 return;
             }
 
             const confirm = await vscode.window.showWarningMessage(
-                `Permanently delete all ${folderItems.filter(t => !t._isFolderMarker).length} item(s) in "${folderName}"?`,
+                `Permanently delete all ${realItems.length} item(s) in "${folderName}"?`,
                 { modal: true }, "Delete All"
             );
             if (confirm !== "Delete All") return;
 
-            // Delete scanned items from source files
-            const scannedItems = folderItems.filter(t => t.isScanned && !t._isFolderMarker);
-            await deleteFromSourceFiles(scannedItems);
-
-            // Remove all items of this folder from trash (including marker)
+            // Remove from trash FIRST (scanner race fix)
             trash = trash.filter(t => (t.deletedFrom || 'Unknown') !== folderName);
             await context.globalState.update('trashData', trash);
+
+            // Remove from priority
+            let priorityTasks = context.globalState.get('priorityTasks', []) || [];
+            const itemKeys = new Set(realItems.map(t =>
+                t.isScanned ? `${t.originalFile}:${t.originalLine}` : String(t.id)
+            ));
+            priorityTasks = priorityTasks.filter(p => {
+                const key = p.file ? `${p.file}:${p.line}` : String(p.id);
+                return !itemKeys.has(key);
+            });
+            await context.globalState.update('priorityTasks', priorityTasks);
+
+            // Delete scanned items from source files
+            await deleteItemsFromFiles(realItems.filter(t => t.isScanned));
+
             todoProvider.refresh();
             return;
         }
 
-        // ── Single task node ──────────────────────────────────────────────
-        const itemToDelete = trash.find(t => t.isScanned
-            ? (t.originalFile === node.file && Number(t.originalLine) === Number(node.line))
-            : (String(t.id) === String(node.id))
-        );
+        // ── Single task node ───────────────────────────────────────────────
+        const itemToDelete = trash.find(t => {
+            if (t._isFolderMarker) return false;
+            return t.isScanned
+                ? (t.originalFile === node.file && Number(t.originalLine) === Number(node.line))
+                : (String(t.id) === String(node.id));
+        });
 
-        // Physically delete from source file if it's a scanned comment
-        if (itemToDelete && itemToDelete.isScanned) {
-            await deleteFromSourceFiles([itemToDelete]);
+        // Remove from trash FIRST
+        trash = trash.filter(t => {
+            if (t._isFolderMarker) return true;
+            return t.isScanned
+                ? (t.originalFile !== node.file || Number(t.originalLine) !== Number(node.line))
+                : (String(t.id) !== String(node.id));
+        });
+        await context.globalState.update('trashData', trash);
+
+        // Remove from priority
+        if (itemToDelete) {
+            let priorityTasks = context.globalState.get('priorityTasks', []) || [];
+            const key = itemToDelete.isScanned
+                ? `${itemToDelete.originalFile}:${itemToDelete.originalLine}`
+                : String(itemToDelete.id);
+            priorityTasks = priorityTasks.filter(p => {
+                const pKey = p.file ? `${p.file}:${p.line}` : String(p.id);
+                return pKey !== key;
+            });
+            await context.globalState.update('priorityTasks', priorityTasks);
+
+            // Delete from source file
+            if (itemToDelete.isScanned) {
+                await deleteItemsFromFiles([itemToDelete]);
+            }
         }
 
-        trash = trash.filter(t => t.isScanned
-            ? (t.originalFile !== node.file || Number(t.originalLine) !== Number(node.line))
-            : (String(t.id) !== String(node.id))
-        );
-
-        // Update state directly without triggering a scanner re-run via logEvent.
-        await context.globalState.update('trashData', trash);
         todoProvider.refresh();
     }));
 }
