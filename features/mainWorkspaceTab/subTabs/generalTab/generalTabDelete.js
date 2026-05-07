@@ -24,15 +24,16 @@ function registerGeneralTabDelete(context, todoProvider) {
             let priorityTasks = context.globalState.get('priorityTasks', []) || [];
 
             // Move all General Workspace manual tasks to trash
-            const generalManual = manualTasks.filter(t => t.folder === 'General Workspace');
+            const generalManual = manualTasks.filter(t => (t.folder || 'General Workspace') === 'General Workspace');
             generalManual.forEach(t => {
                 const wasInPriority = priorityTasks.some(p => String(p.id) === String(t.id));
                 trash.push({ ...t, deletedFrom: 'General Workspace', isScanned: false, _wasInPriority: wasInPriority });
             });
-            manualTasks = manualTasks.filter(t => t.folder !== 'General Workspace');
+            manualTasks = manualTasks.filter(t => (t.folder || 'General Workspace') !== 'General Workspace');
 
             // Move all General Workspace scanned comments to trash
-            const generalScanned = fileComments.filter(c => c.target === 'General Workspace');
+            // NOTE: scanner may store items with target=null/undefined — treat those as General Workspace too
+            const generalScanned = fileComments.filter(c => (c.target || 'General Workspace') === 'General Workspace');
             generalScanned.forEach(c => {
                 const pKey = `${c.file}:${c.line}`;
                 const wasInPriority = priorityTasks.some(p => `${p.file}:${p.line}` === pKey);
@@ -46,7 +47,7 @@ function registerGeneralTabDelete(context, todoProvider) {
                     _wasInPriority: wasInPriority
                 });
             });
-            fileComments = fileComments.filter(c => c.target !== 'General Workspace');
+            fileComments = fileComments.filter(c => (c.target || 'General Workspace') !== 'General Workspace');
 
             // Remove all General Workspace items from priority
             priorityTasks = priorityTasks.filter(p =>
