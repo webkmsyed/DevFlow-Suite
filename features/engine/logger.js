@@ -64,9 +64,19 @@ const getLogs = (context) => {
     return context.globalState.get('auditLogs', []);
 };
 
+const editLogNote = async (context, logId, newNote) => {
+    let logs = [...(context.globalState.get('auditLogs', []))];
+    const logIndex = logs.findIndex(l => l.id === logId);
+    if (logIndex > -1) {
+        logs[logIndex].note = newNote;
+        await context.globalState.update('auditLogs', logs);
+        triggerTimelineRefresh();
+    }
+};
+
 const clearLogs = async (context) => {
     await context.globalState.update('auditLogs', []);
     triggerTimelineRefresh();
 };
 
-module.exports = { logEvent, getLogs, clearLogs, toggleLogStar };
+module.exports = { logEvent, getLogs, clearLogs, toggleLogStar, editLogNote };

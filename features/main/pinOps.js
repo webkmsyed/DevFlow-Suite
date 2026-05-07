@@ -198,7 +198,8 @@ function registerPinOps(context) {
                 if (msg.command === 'toggleStar') {
                     meta[filename].isStarred = msg.isStarred;
                     meta[filename].tag = msg.tag; // preserve tag
-                } else {
+                    meta[filename].note = msg.note; // preserve note
+                } else if (msg.command === 'promptTag') {
                     const newTag = await vscode.window.showInputBox({
                         prompt: "Enter a tag for this pin (leave empty to remove)",
                         value: msg.tag || ""
@@ -206,6 +207,16 @@ function registerPinOps(context) {
                     if (newTag === undefined) return; // user cancelled
                     meta[filename].isStarred = msg.isStarred;
                     meta[filename].tag = newTag.trim();
+                    meta[filename].note = msg.note; // preserve note
+                } else if (msg.command === 'promptNote') {
+                    const newNote = await vscode.window.showInputBox({
+                        prompt: "Enter a note for this pin (leave empty to remove)",
+                        value: msg.note || ""
+                    });
+                    if (newNote === undefined) return; // user cancelled
+                    meta[filename].isStarred = msg.isStarred;
+                    meta[filename].tag = msg.tag; // preserve tag
+                    meta[filename].note = newNote.trim();
                 }
 
                 fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2), 'utf8');
@@ -271,7 +282,8 @@ function renderPinPanel() {
                             type: isManual ? 'Manual Pin' : 'Auto Pin',
                             color: isManual ? '#3b82f6' : '#22c55e',
                             isStarred: fileMeta.isStarred || false,
-                            tag: fileMeta.tag || ''
+                            tag: fileMeta.tag || '',
+                            note: fileMeta.note || ''
                         });
                     }
                 }
@@ -301,7 +313,8 @@ function renderPinPanel() {
                         type: isManual ? 'Manual Pin' : 'Auto Pin',
                         color: isManual ? '#3b82f6' : '#22c55e',
                         isStarred: fileMeta.isStarred || false,
-                        tag: fileMeta.tag || ''
+                        tag: fileMeta.tag || '',
+                        note: fileMeta.note || ''
                     });
                 }
             }
@@ -544,10 +557,12 @@ function getPinHTML(title, itemsJSON, freq, savedMode, isShowingAllPins) {
               <span class="badge \${item.type === 'Manual Pin' ? 'manual' : 'auto'}">\${item.type}</span>
               \${item.tag ? \`<span class="badge" style="background:var(--bg); border:1px solid var(--border); color:var(--text2)">🏷️ \${item.tag}</span>\` : ''}
             </div>
+            \${item.note ? \`<div style="font-size:12px; color:var(--text2); margin-top:4px; font-style:italic; background:var(--bg2); padding:4px 8px; border-radius:4px; border-left:2px solid var(--border);">📝 \${item.note}</div>\` : ''}
           </div>
           <div style="display:flex; gap: 8px; align-items: center;">
-            <button class="icon-btn" style="color: \${item.isStarred ? '#eab308' : 'var(--text2)'}; border:none; font-size:18px; width:30px;" onclick="vscode.postMessage({command:'toggleStar', file:'\${item.file}', isStarred: \${!item.isStarred}, tag: '\${item.tag}'})" title="Toggle Star">\${item.isStarred ? '★' : '☆'}</button>
-            <button onclick="vscode.postMessage({command:'promptTag', file:'\${item.file}', isStarred: \${item.isStarred}, tag: '\${item.tag}'})" title="Add/Edit Tag">Tag</button>
+            <button class="icon-btn" style="color: \${item.isStarred ? '#eab308' : 'var(--text2)'}; border:none; font-size:18px; width:30px;" onclick="vscode.postMessage({command:'toggleStar', file:'\${item.file}', isStarred: \${!item.isStarred}, tag: '\${item.tag}', note: '\${(item.note||'').replace(/'/g,"\\\\'")}'})" title="Toggle Star">\${item.isStarred ? '★' : '☆'}</button>
+            <button class="icon-btn" style="color: var(--text2); border:none; font-size:16px; width:30px;" onclick="vscode.postMessage({command:'promptNote', file:'\${item.file}', isStarred: \${item.isStarred}, tag: '\${item.tag}', note: '\${(item.note||'').replace(/'/g,"\\\\'")}'})" title="Add/Edit Note">📝</button>
+            <button onclick="vscode.postMessage({command:'promptTag', file:'\${item.file}', isStarred: \${item.isStarred}, tag: '\${item.tag}', note: '\${(item.note||'').replace(/'/g,"\\\\'")}'})" title="Add/Edit Tag">Tag</button>
             <button onclick="vscode.postMessage({command:'exportSinglePin', file:'\${item.file}', fileName:'\${item.fileName}', dateStr: \${item.dateStr}})" title="Save As">Save</button>
             <button class="primary" onclick="vscode.postMessage({command:'openPin', file:'\${item.file}', fileName:'\${item.fileName}'})" title="View Code">View Code</button>
           </div>

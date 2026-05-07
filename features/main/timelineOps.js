@@ -1,6 +1,6 @@
 // File: features/main/timelineOps.js
 const vscode = require('vscode');
-const { toggleLogStar } = require('../engine/logger');
+const { toggleLogStar, editLogNote } = require('../engine/logger');
 
 let currentPanel = null;
 
@@ -29,6 +29,16 @@ function registerTimeline(context) {
             if (msg.command === 'toggleStar') {
                 await toggleLogStar(context, msg.id);
                 render();
+            }
+            if (msg.command === 'editNote') {
+                const newNote = await vscode.window.showInputBox({
+                    prompt: "Enter a note for this log entry (leave empty to remove)",
+                    value: msg.note || ""
+                });
+                if (newNote !== undefined) {
+                    await editLogNote(context, msg.id, newNote.trim());
+                    render();
+                }
             }
             if (msg.command === 'refresh') {
                 render();
@@ -356,6 +366,7 @@ function getHTML(logs, savedMode) {
   .log-right{display:flex;align-items:center;gap:4px;flex-shrink:0;}
   .empty{text-align:center;padding:60px 20px;color:var(--text3);font-size:12px;}
   .count{font-size:11px;color:var(--text2);font-family:var(--font-mono);}
+  .log-note{font-size:11px;color:var(--text2);margin-top:4px;font-style:italic;background:var(--bg2);padding:4px 8px;border-radius:4px;border-left:2px solid var(--border);}
 </style>
 </head>
 <body class="${initMode}">
@@ -464,6 +475,7 @@ function getHTML(logs, savedMode) {
         const starClass = log.isStarred ? 'on' : '';
         const fileHint = log.file ? \`<span class="log-file">📄 \${log.file}\${log.line?':'+log.line:''}</span>\` : '';
         const movement = log.movement ? \`<span class="log-movement">→ \${log.movement}</span>\` : '';
+        const noteHtml = log.note ? \`<div class="log-note">📝 \${log.note}</div>\` : '';
         html += \`<div class="log-item" onclick="handleClick(event,'\${(log.file||'').replace(/'/g,"\\\\'")}',\${log.line||1})">
           <div class="log-dot" style="background:\${log.color}"></div>
           <div class="log-body">
@@ -472,9 +484,11 @@ function getHTML(logs, savedMode) {
               <span class="log-title">\${log.title}</span>\${movement}
             </div>
             <div class="log-meta"><span class="log-time">\${log.time||''}</span>\${fileHint}</div>
+            \${noteHtml}
           </div>
           <div class="log-right">
-            <button class="star-btn \${starClass}" onclick="event.stopPropagation();toggleStar(\${log.id})">⭐</button>
+            <button class="star-btn \${starClass}" onclick="event.stopPropagation();toggleStar(\${log.id})" title="Toggle Star">⭐</button>
+            <button class="star-btn on" onclick="event.stopPropagation();editNote(\${log.id}, '\${(log.note||'').replace(/'/g,"\\\\'")}')" title="Add/Edit Note">📝</button>
           </div>
         </div>\`;
       });
@@ -488,6 +502,7 @@ function getHTML(logs, savedMode) {
     if (file) vscode.postMessage({ command: 'openFile', file, line });
   }
   function toggleStar(id) { vscode.postMessage({ command: 'toggleStar', id }); }
+  function editNote(id, note) { vscode.postMessage({ command: 'editNote', id, note }); }
 
   document.getElementById('searchInput').addEventListener('input', render);
   document.getElementById('actionFilter').addEventListener('change', render);
