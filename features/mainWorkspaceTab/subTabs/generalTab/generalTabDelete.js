@@ -21,27 +21,38 @@ function registerGeneralTabDelete(context, todoProvider) {
             let manualTasks = context.globalState.get('manualTasks', []) || [];
             let fileComments = context.globalState.get('fileComments', []) || [];
             let trash = context.globalState.get('trashData', []) || [];
+            let priorityTasks = context.globalState.get('priorityTasks', []) || [];
 
             // Move all General Workspace manual tasks to trash
             const generalManual = manualTasks.filter(t => t.folder === 'General Workspace');
             generalManual.forEach(t => {
-                trash.push({ ...t, deletedFrom: 'General Workspace', isScanned: false });
+                const wasInPriority = priorityTasks.some(p => String(p.id) === String(t.id));
+                trash.push({ ...t, deletedFrom: 'General Workspace', isScanned: false, _wasInPriority: wasInPriority });
             });
             manualTasks = manualTasks.filter(t => t.folder !== 'General Workspace');
 
             // Move all General Workspace scanned comments to trash
             const generalScanned = fileComments.filter(c => c.target === 'General Workspace');
             generalScanned.forEach(c => {
+                const pKey = `${c.file}:${c.line}`;
+                const wasInPriority = priorityTasks.some(p => `${p.file}:${p.line}` === pKey);
                 trash.push({
                     ...c,
                     id: Date.now() + Math.random(),
                     isScanned: true,
                     originalFile: c.file,
                     originalLine: c.line,
-                    deletedFrom: 'General Workspace'
+                    deletedFrom: 'General Workspace',
+                    _wasInPriority: wasInPriority
                 });
             });
             fileComments = fileComments.filter(c => c.target !== 'General Workspace');
+
+            // Remove all General Workspace items from priority
+            priorityTasks = priorityTasks.filter(p =>
+                p.folder !== 'General Workspace' && p.target !== 'General Workspace'
+            );
+            await context.globalState.update('priorityTasks', priorityTasks);
 
             // Physically delete scanned comment lines from source files
             if (generalScanned.length > 0 && vscode.workspace.workspaceFolders?.[0]) {

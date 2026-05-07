@@ -21,7 +21,14 @@ function registerGeneralTaskDelete(context, todoProvider) {
             await context.globalState.update('itemTags', itemTags);
         }
 
-        // Build trash entry — save the tag so it can be restored
+        // Check if this task is currently in priority (BEFORE removing it)
+        const nodeId = node.id ? String(node.id) : `${node.file}:${node.line}`;
+        const wasInPriority = pri.some(p => {
+            const pId = p.id ? String(p.id) : `${p.file}:${p.line}`;
+            return pId === nodeId;
+        });
+
+        // Build trash entry — save tag + priority state for restore
         const trashEntry = {
             id: node.id || Date.now() + Math.random(),
             text: node.originalText || node.label,
@@ -31,7 +38,8 @@ function registerGeneralTaskDelete(context, todoProvider) {
             originalLine: node.line || null,
             file: node.file || null,
             line: node.line || null,
-            _savedTag: savedTag
+            _savedTag: savedTag,
+            _wasInPriority: wasInPriority
         };
 
         if (isScanned) {
@@ -63,8 +71,7 @@ function registerGeneralTaskDelete(context, todoProvider) {
             await context.globalState.update('manualTasks', manual);
         }
 
-        // Remove from priority if pinned
-        const nodeId = node.id ? String(node.id) : `${node.file}:${node.line}`;
+        // Remove from priority
         pri = pri.filter(p => {
             const pId = p.id ? String(p.id) : `${p.file}:${p.line}`;
             return pId !== nodeId;

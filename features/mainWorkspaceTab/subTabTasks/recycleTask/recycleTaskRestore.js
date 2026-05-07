@@ -45,6 +45,33 @@ function registerRecycleTaskRestore(context, todoProvider) {
 
         trash.splice(itemIndex, 1);
         await context.globalState.update('trashData', trash);
+
+        // Restore priority state if it was pinned before deletion
+        if (item._wasInPriority) {
+            let priorityTasks = context.globalState.get('priorityTasks', []) || [];
+            const alreadyIn = priorityTasks.some(p =>
+                item.isScanned
+                    ? (p.file === item.originalFile && Number(p.line) === Number(item.originalLine))
+                    : String(p.id) === String(item.id)
+            );
+            if (!alreadyIn) {
+                priorityTasks.push({
+                    ...item,
+                    folder: item._originalFolder || item.deletedFrom || 'General Workspace',
+                    target: item._originalFolder || item.deletedFrom || 'General Workspace'
+                });
+                await context.globalState.update('priorityTasks', priorityTasks);
+            }
+        }
+
+        // Restore tag if it was tagged before deletion
+        if (item._savedTag) {
+            let itemTags = context.globalState.get('itemTags', {}) || {};
+            const tagKey = item.id ? String(item.id) : `${item.originalFile}:${item.originalLine}`;
+            itemTags[tagKey] = item._savedTag;
+            await context.globalState.update('itemTags', itemTags);
+        }
+
         todoProvider.refresh();
         logEvent(context, 'Restore', `'${item.text}' 'Recycle Bin -> ${item.deletedFrom || "General Workspace"}'`, item.originalFile, item.originalLine);
         vscode.window.showInformationMessage(`DevFlow: '${item.text}' restored.`);
