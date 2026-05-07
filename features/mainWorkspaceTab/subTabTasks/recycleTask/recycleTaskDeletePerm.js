@@ -1,34 +1,53 @@
 // File: features/subTabTasks/recycle/recycleTaskDeletePerm.js
 const vscode = require('vscode');
 
-// Helper: physically delete scanned comment lines from source files (batch, reverse order)
+// Helper: physically delete scanned comment lines from source files
+// Deletes one line at a time (sequential) to avoid VS Code range-adjustment conflicts
+// that silently drop lines when multiple ranges are applied in a single WorkspaceEdit.
 async function deleteFromSourceFiles(items) {
     if (!vscode.workspace.workspaceFolders?.[0]) return;
 
     const byFile = {};
     for (const item of items) {
         const f = item.originalFile || item.file;
-        const l = item.originalLine || item.line;
-        if (f && l) {
-            if (!byFile[f]) byFile[f] = [];
-            byFile[f].push(Number(l));
+        const l = Number(item.originalLine || item.line);
+        if (f && l && !isNaN(l) && l > 0) {
+            if (!byFile[f]) byFile[f] = new Set();
+            byFile[f].add(l);
         }
     }
 
-    for (const [relFile, lines] of Object.entries(byFile)) {
+    for (const [relFile, lineSet] of Object.entries(byFile)) {
         try {
             const fileUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, relFile);
-            const edit = new vscode.WorkspaceEdit();
-            const sorted = [...new Set(lines)].sort((a, b) => b - a); // unique, reverse order
-            for (const ln of sorted) {
-                edit.delete(fileUri, new vscode.Range(
-                    new vscode.Position(ln - 1, 0),
-                    new vscode.Position(ln, 0)
-                ));
+            // Sort descending: delete from bottom up so earlier line numbers stay valid
+            const sortedLines = [...lineSet].sort((a, b) => b - a);
+
+            for (const ln of sortedLines) {
+                // Re-open document each time so we always have fresh line count
+                const doc = await vscode.workspace.openTextDocument(fileUri);
+                if (ln > doc.lineCount) continue; // line no longer exists — skip
+
+                const edit = new vscode.WorkspaceEdit();
+                const isLastLine = ln === doc.lineCount;
+
+                if (isLastLine) {
+                    // Last line has no trailing newline — delete from end of previous line
+                    const prevLine = doc.lineAt(ln - 2); // 0-indexed
+                    edit.delete(fileUri, new vscode.Range(
+                        new vscode.Position(prevLine.range.end.line, prevLine.range.end.character),
+                        new vscode.Position(ln - 1, doc.lineAt(ln - 1).text.length)
+                    ));
+                } else {
+                    edit.delete(fileUri, new vscode.Range(
+                        new vscode.Position(ln - 1, 0),
+                        new vscode.Position(ln, 0)
+                    ));
+                }
+
+                await vscode.workspace.applyEdit(edit);
+                await doc.save();
             }
-            await vscode.workspace.applyEdit(edit);
-            const doc = await vscode.workspace.openTextDocument(fileUri);
-            await doc.save();
         } catch (e) { /* file may be read-only or deleted — skip */ }
     }
 }
