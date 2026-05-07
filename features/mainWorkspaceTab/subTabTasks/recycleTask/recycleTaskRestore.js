@@ -10,11 +10,14 @@ function registerRecycleTaskRestore(context, todoProvider) {
         recordHistory(context);
 
         let trash = context.globalState.get('trashData', []) || [];
-        const itemIndex = trash.findIndex(t =>
-            t.isScanned
-                ? (t.originalFile === node.file && t.originalLine === node.line)
-                : (String(t.id) === String(node.id))
-        );
+        const itemIndex = trash.findIndex(t => {
+            if (t._isFolderMarker) return false;
+            if (t.isScanned) {
+                return t.originalFile === node.file &&
+                       Number(t.originalLine) === Number(node.line);
+            }
+            return String(t.id) === String(node.id);
+        });
 
         if (itemIndex === -1) {
             vscode.window.showWarningMessage("DevFlow: Item not found in Recycle Bin.");

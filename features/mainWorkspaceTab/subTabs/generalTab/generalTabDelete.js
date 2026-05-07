@@ -55,6 +55,11 @@ function registerGeneralTabDelete(context, todoProvider) {
             );
             await context.globalState.update('priorityTasks', priorityTasks);
 
+            // ── COMMIT STATE FIRST so scanner sees correct trashData/fileComments ──
+            await context.globalState.update('trashData', trash);
+            await context.globalState.update('manualTasks', manualTasks);
+            await context.globalState.update('fileComments', fileComments);
+
             // Physically delete scanned comment lines from source files (sequential, one at a time)
             if (generalScanned.length > 0 && vscode.workspace.workspaceFolders?.[0]) {
                 const byFile = {};
@@ -92,10 +97,6 @@ function registerGeneralTabDelete(context, todoProvider) {
                     } catch (e) { /* file may be read-only — skip */ }
                 }
             }
-
-            await context.globalState.update('trashData', trash);
-            await context.globalState.update('manualTasks', manualTasks);
-            await context.globalState.update('fileComments', fileComments);
 
             todoProvider.refresh();
             logEvent(context, 'Delete', `'General Workspace' 'All items -> Recycle Bin'`);
@@ -161,6 +162,12 @@ function registerGeneralTabDelete(context, todoProvider) {
                 byFile[c.file].push(c.line);
             });
 
+            // ── COMMIT STATE FIRST so scanner sees correct trashData/fileComments ──
+            manualTasks = manualTasks.filter(t => t.folder !== folderName);
+            fileComments = fileComments.filter(c => c.target !== folderName);
+            await context.globalState.update('trashData', trash);
+            await context.globalState.update('fileComments', fileComments);
+
             // Delete comment lines from source files (sequential, one at a time)
             if (vscode.workspace.workspaceFolders?.[0]) {
                 const byFile2 = {};
@@ -198,13 +205,6 @@ function registerGeneralTabDelete(context, todoProvider) {
                     } catch (e) { /* file may be read-only — skip physical delete */ }
                 }
             }
-
-            manualTasks = manualTasks.filter(t => t.folder !== folderName);
-            fileComments = fileComments.filter(c => c.target !== folderName);
-
-
-            await context.globalState.update('trashData', trash);
-            await context.globalState.update('fileComments', fileComments);
 
         } else {
             // Move tasks to General Workspace
