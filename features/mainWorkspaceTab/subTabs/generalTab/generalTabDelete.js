@@ -8,9 +8,48 @@ function registerGeneralTabDelete(context, todoProvider) {
         if (!node) return;
         const folderName = node.originalText || node.label;
 
-        // Block system folder
+        // For General Workspace: move all its items to recycle bin, do not delete the folder itself
         if (folderName === 'General Workspace') {
-            vscode.window.showWarningMessage("DevFlow: 'General Workspace' cannot be deleted.");
+            const confirm = await vscode.window.showWarningMessage(
+                "Move all items in 'General Workspace' to the Recycle Bin?",
+                { modal: true },
+                'Move to Recycle Bin'
+            );
+            if (!confirm) return;
+            recordHistory(context);
+
+            let manualTasks = context.globalState.get('manualTasks', []) || [];
+            let fileComments = context.globalState.get('fileComments', []) || [];
+            let trash = context.globalState.get('trashData', []) || [];
+
+            // Move all General Workspace manual tasks to trash
+            const generalManual = manualTasks.filter(t => t.folder === 'General Workspace');
+            generalManual.forEach(t => {
+                trash.push({ ...t, deletedFrom: 'General Workspace', isScanned: false });
+            });
+            manualTasks = manualTasks.filter(t => t.folder !== 'General Workspace');
+
+            // Move all General Workspace scanned comments to trash
+            const generalScanned = fileComments.filter(c => c.target === 'General Workspace');
+            generalScanned.forEach(c => {
+                trash.push({
+                    ...c,
+                    id: Date.now() + Math.random(),
+                    isScanned: true,
+                    originalFile: c.file,
+                    originalLine: c.line,
+                    deletedFrom: 'General Workspace'
+                });
+            });
+            fileComments = fileComments.filter(c => c.target !== 'General Workspace');
+
+            await context.globalState.update('trashData', trash);
+            await context.globalState.update('manualTasks', manualTasks);
+            await context.globalState.update('fileComments', fileComments);
+
+            todoProvider.refresh();
+            logEvent(context, 'Delete', `'General Workspace' 'All items -> Recycle Bin'`);
+            vscode.window.showInformationMessage("DevFlow: All General Workspace items moved to Recycle Bin.");
             return;
         }
 

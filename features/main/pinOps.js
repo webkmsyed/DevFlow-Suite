@@ -193,35 +193,49 @@ function registerPinOps(context) {
                 if (fs.existsSync(metaPath)) {
                     try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf8')); } catch(e){}
                 }
-                if (!meta[filename]) meta[filename] = { isStarred: false, tag: '' };
+                if (!meta[filename]) meta[filename] = { isStarred: false, tag: '', note: '' };
 
                 if (msg.command === 'toggleStar') {
                     meta[filename].isStarred = msg.isStarred;
-                    meta[filename].tag = msg.tag; // preserve tag
-                    meta[filename].note = msg.note; // preserve note
+                    meta[filename].tag = msg.tag;
+                    meta[filename].note = msg.note;
                 } else if (msg.command === 'promptTag') {
                     const newTag = await vscode.window.showInputBox({
                         prompt: "Enter a tag for this pin (leave empty to remove)",
                         value: msg.tag || ""
                     });
-                    if (newTag === undefined) return; // user cancelled
+                    if (newTag === undefined) return;
                     meta[filename].isStarred = msg.isStarred;
                     meta[filename].tag = newTag.trim();
-                    meta[filename].note = msg.note; // preserve note
-                } else if (msg.command === 'promptNote') {
-                    const newNote = await vscode.window.showInputBox({
-                        prompt: "Enter a note for this pin (leave empty to remove)",
-                        value: msg.note || ""
-                    });
-                    if (newNote === undefined) return; // user cancelled
-                    meta[filename].isStarred = msg.isStarred;
-                    meta[filename].tag = msg.tag; // preserve tag
-                    meta[filename].note = newNote.trim();
+                    meta[filename].note = msg.note;
                 }
 
                 fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2), 'utf8');
                 renderPinPanel();
+            } else if (msg.command === 'promptNote') {
+                const dirPath = path.join(basePinDir, path.dirname(msg.file));
+                const filename = path.basename(msg.file);
+                const metaPath = path.join(dirPath, 'meta.json');
+
+                let meta = {};
+                if (fs.existsSync(metaPath)) {
+                    try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf8')); } catch(e){}
+                }
+                if (!meta[filename]) meta[filename] = { isStarred: false, tag: '', note: '' };
+
+                const newNote = await vscode.window.showInputBox({
+                    prompt: "Enter a note for this pin (leave empty to remove)",
+                    value: msg.note || ""
+                });
+                if (newNote === undefined) return;
+                meta[filename].isStarred = msg.isStarred;
+                meta[filename].tag = msg.tag;
+                meta[filename].note = newNote.trim();
+
+                fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2), 'utf8');
+                renderPinPanel();
             }
+
         });
     }));
 
