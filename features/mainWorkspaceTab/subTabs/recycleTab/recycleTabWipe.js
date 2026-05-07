@@ -1,6 +1,5 @@
 // File: features/subTabs/recycle/recycleTabWipe.js
 const vscode = require('vscode');
-const { logEvent } = require('../../../engine/logger');
 
 function registerRecycleTabWipe(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.recDeleteAll', async () => {
@@ -8,8 +7,8 @@ function registerRecycleTabWipe(context, todoProvider) {
             "Permanently delete all items in Recycle Bin?", { modal: true }, "Empty Bin"
         );
         if (confirm === "Empty Bin") {
+            // Update state directly without triggering a scanner re-run via logEvent.
             await context.globalState.update('trashData', []);
-            logEvent(context, 'Wipe', 'Action ➔ Recycle Bin Emptied Permanently');
             todoProvider.refresh();
         }
     }));

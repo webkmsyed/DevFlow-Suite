@@ -223,10 +223,14 @@ function getSearchResults(context, query) {
 
 // ── Formatters ────────────────────────────────────────────────────────────
 function formatTask(item, contextValue, parentFolder) {
+    const locationHint = item.file
+        ? `📄 ${item.file}:${item.line}`
+        : null;
     return {
         ...item,
         label: item.text || '',
-        originalText: item.text || '',       // Always set originalText for copy/note/etc
+        originalText: item.text || '',
+        description: locationHint || undefined,
         contextValue,
         parentLabel: parentFolder || item.folder || item.target || 'General Workspace',
         collapsibleState: vscode.TreeItemCollapsibleState.None,

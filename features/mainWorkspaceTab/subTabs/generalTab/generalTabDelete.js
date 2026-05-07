@@ -55,9 +55,9 @@ function registerGeneralTabDelete(context, todoProvider) {
 
         // Ask what to do with tasks inside
         const action = await vscode.window.showWarningMessage(
-            `Delete folder "${folderName}"? What should happen to tasks inside?`,
+            `Delete folder "${folderName}"?`,
             { modal: true },
-            'Move Tasks to Recycle Bin',
+            'Move to Recycle Bin',
             'Move Tasks to General Workspace'
         );
 
@@ -77,27 +77,36 @@ function registerGeneralTabDelete(context, todoProvider) {
         const folderManual = manualTasks.filter(t => t.folder === folderName);
         const folderScanned = fileComments.filter(c => c.target === folderName);
 
-        if (action === 'Move Tasks to Recycle Bin') {
-            // Move manual tasks to recycle bin
+        if (action === 'Move to Recycle Bin') {
+            // Push a folder marker so the recycle bin shows the folder group even if empty
+            const alreadyHasFolder = trash.some(t => t._isFolderMarker && t.deletedFrom === folderName);
+            if (!alreadyHasFolder) {
+                trash.push({ _isFolderMarker: true, id: `folder_${folderName}_${Date.now()}`, text: `[Folder] ${folderName}`, deletedFrom: folderName, isScanned: false, _originalFolder: folderName });
+            }
+
+            // Move manual tasks — preserve priority state
             folderManual.forEach(t => {
-                trash.push({ ...t, deletedFrom: folderName, isScanned: false });
+                const wasInPriority = priorityTasks.some(p => String(p.id) === String(t.id));
+                trash.push({ ...t, deletedFrom: folderName, isScanned: false, _wasInPriority: wasInPriority, _originalFolder: folderName });
             });
 
-            // Move scanned comments to recycle bin
+            // Move scanned comments — preserve priority state
             folderScanned.forEach(c => {
+                const pKey = `${c.file}:${c.line}`;
+                const wasInPriority = priorityTasks.some(p => `${p.file}:${p.line}` === pKey);
                 trash.push({
                     ...c,
                     id: Date.now() + Math.random(),
                     isScanned: true,
                     originalFile: c.file,
                     originalLine: c.line,
-                    deletedFrom: folderName
+                    deletedFrom: folderName,
+                    _wasInPriority: wasInPriority,
+                    _originalFolder: folderName
                 });
             });
 
-            // Remove from manualTasks
             manualTasks = manualTasks.filter(t => t.folder !== folderName);
-            // Remove from fileComments (they're now in trash)
             fileComments = fileComments.filter(c => c.target !== folderName);
 
             await context.globalState.update('trashData', trash);
@@ -114,14 +123,10 @@ function registerGeneralTabDelete(context, todoProvider) {
             await context.globalState.update('fileComments', fileComments);
         }
 
-        // Update manual tasks either way
         await context.globalState.update('manualTasks', manualTasks);
 
-        // Clean priority tasks that referenced this folder
-        priorityTasks = priorityTasks.filter(p => {
-            if (p._sourceFolder === `folder:${folderName}`) return false;
-            return true;
-        });
+        // Remove all priority tasks that belonged to this folder
+        priorityTasks = priorityTasks.filter(p => (p.folder !== folderName && p.target !== folderName));
         await context.globalState.update('priorityTasks', priorityTasks);
 
         todoProvider.refresh();
