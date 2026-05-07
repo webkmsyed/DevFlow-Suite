@@ -166,23 +166,14 @@ function getPriorityFolderItems(context, folderName) {
 function getRecycleItems(context) {
     const trashData = context.globalState.get('trashData', []) || [];
 
-    // Group recycled items by their source folder
+    // Always group by source folder for consistent UX
     const folderSet = new Set();
-    const standaloneItems = [];
-
     trashData.forEach(t => {
-        const from = t.deletedFrom || 'Unknown';
-        // Items that came from named folders get grouped; simple items stay flat
-        folderSet.add(from);
+        folderSet.add(t.deletedFrom || 'Unknown');
     });
 
-    // If only one source, show flat list; if multiple, show grouped by folder
-    if (folderSet.size <= 1) {
-        // Flat list — simpler UX
-        return trashData.map(t => formatRecycleTask(t));
-    }
+    if (folderSet.size === 0) return [];
 
-    // Grouped by deleted-from folder
     const folders = Array.from(folderSet).map(fName => ({
         label: fName,
         originalText: fName,
@@ -198,7 +189,7 @@ function getRecycleItems(context) {
 function getRecycleFolderItems(context, folderName) {
     const trashData = context.globalState.get('trashData', []) || [];
     return trashData
-        .filter(t => (t.deletedFrom || 'Unknown') === folderName)
+        .filter(t => (t.deletedFrom || 'Unknown') === folderName && !t._isFolderMarker)
         .map(t => formatRecycleTask(t));
 }
 

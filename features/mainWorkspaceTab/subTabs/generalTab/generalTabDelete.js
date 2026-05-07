@@ -90,7 +90,9 @@ function registerGeneralTabDelete(context, todoProvider) {
                 trash.push({ ...t, deletedFrom: folderName, isScanned: false, _wasInPriority: wasInPriority, _originalFolder: folderName });
             });
 
-            // Move scanned comments — preserve priority state
+            // Move scanned comments — preserve priority state and delete from source files
+            // Group by file so we can batch the edits per file
+            const byFile = {};
             folderScanned.forEach(c => {
                 const pKey = `${c.file}:${c.line}`;
                 const wasInPriority = priorityTasks.some(p => `${p.file}:${p.line}` === pKey);
@@ -104,10 +106,33 @@ function registerGeneralTabDelete(context, todoProvider) {
                     _wasInPriority: wasInPriority,
                     _originalFolder: folderName
                 });
+                if (!byFile[c.file]) byFile[c.file] = [];
+                byFile[c.file].push(c.line);
             });
+
+            // Delete comment lines from source files (reverse order to avoid line shifts)
+            if (vscode.workspace.workspaceFolders?.[0]) {
+                for (const [relFile, lines] of Object.entries(byFile)) {
+                    try {
+                        const fileUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, relFile);
+                        const edit = new vscode.WorkspaceEdit();
+                        const sorted = [...lines].sort((a, b) => b - a); // reverse order
+                        for (const ln of sorted) {
+                            edit.delete(fileUri, new vscode.Range(
+                                new vscode.Position(ln - 1, 0),
+                                new vscode.Position(ln, 0)
+                            ));
+                        }
+                        await vscode.workspace.applyEdit(edit);
+                        const doc = await vscode.workspace.openTextDocument(fileUri);
+                        await doc.save();
+                    } catch (e) { /* file may be read-only — skip physical delete */ }
+                }
+            }
 
             manualTasks = manualTasks.filter(t => t.folder !== folderName);
             fileComments = fileComments.filter(c => c.target !== folderName);
+
 
             await context.globalState.update('trashData', trash);
             await context.globalState.update('fileComments', fileComments);

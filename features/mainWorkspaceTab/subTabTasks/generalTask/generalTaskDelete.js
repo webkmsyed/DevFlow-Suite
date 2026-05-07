@@ -11,8 +11,17 @@ function registerGeneralTaskDelete(context, todoProvider) {
         const isScanned = node.contextValue === 'scannedTask' || !!node.file;
         let trash = context.globalState.get('trashData', []) || [];
         let pri = context.globalState.get('priorityTasks', []) || [];
+        let itemTags = context.globalState.get('itemTags', {}) || {};
 
-        // Build trash entry
+        // Determine the tag key for this task and save/clear it
+        const itemKey = node.id ? String(node.id) : `${node.file}:${node.line}`;
+        const savedTag = itemTags[itemKey] || '';
+        if (savedTag) {
+            delete itemTags[itemKey];
+            await context.globalState.update('itemTags', itemTags);
+        }
+
+        // Build trash entry — save the tag so it can be restored
         const trashEntry = {
             id: node.id || Date.now() + Math.random(),
             text: node.originalText || node.label,
@@ -21,7 +30,8 @@ function registerGeneralTaskDelete(context, todoProvider) {
             originalFile: node.file || null,
             originalLine: node.line || null,
             file: node.file || null,
-            line: node.line || null
+            line: node.line || null,
+            _savedTag: savedTag
         };
 
         if (isScanned) {

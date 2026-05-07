@@ -15,8 +15,9 @@ const TAG_PRESETS = [
     { label: '🚀  Feature', value: '🚀' },
     { label: '🔵  In Progress', value: '🔵' },
     { label: '⏸️  Paused', value: '⏸️' },
-    { label: '─────────────', value: '__sep__', kind: vscode.QuickPickItemKind.Separator },
+    { label: '✓·············', value: '__sep__', kind: vscode.QuickPickItemKind.Separator },
     { label: '✏️  Custom Tag...', value: 'custom' },
+    { label: '–––––––––––––', value: '__sep2__', kind: vscode.QuickPickItemKind.Separator },
     { label: '🗑️  Remove Tag', value: 'clear' },
 ];
 
