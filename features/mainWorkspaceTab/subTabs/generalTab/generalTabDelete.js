@@ -43,6 +43,31 @@ function registerGeneralTabDelete(context, todoProvider) {
             });
             fileComments = fileComments.filter(c => c.target !== 'General Workspace');
 
+            // Physically delete scanned comment lines from source files
+            if (generalScanned.length > 0 && vscode.workspace.workspaceFolders?.[0]) {
+                const byFile = {};
+                generalScanned.forEach(c => {
+                    if (!byFile[c.file]) byFile[c.file] = [];
+                    byFile[c.file].push(Number(c.line));
+                });
+                for (const [relFile, lines] of Object.entries(byFile)) {
+                    try {
+                        const fileUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, relFile);
+                        const edit = new vscode.WorkspaceEdit();
+                        const sorted = [...new Set(lines)].sort((a, b) => b - a);
+                        for (const ln of sorted) {
+                            edit.delete(fileUri, new vscode.Range(
+                                new vscode.Position(ln - 1, 0),
+                                new vscode.Position(ln, 0)
+                            ));
+                        }
+                        await vscode.workspace.applyEdit(edit);
+                        const doc = await vscode.workspace.openTextDocument(fileUri);
+                        await doc.save();
+                    } catch (e) { /* file may be read-only — skip */ }
+                }
+            }
+
             await context.globalState.update('trashData', trash);
             await context.globalState.update('manualTasks', manualTasks);
             await context.globalState.update('fileComments', fileComments);
@@ -52,6 +77,7 @@ function registerGeneralTabDelete(context, todoProvider) {
             vscode.window.showInformationMessage("DevFlow: All General Workspace items moved to Recycle Bin.");
             return;
         }
+
 
         // Ask what to do with tasks inside
         const action = await vscode.window.showWarningMessage(
