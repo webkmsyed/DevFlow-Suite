@@ -54,14 +54,15 @@ function registerGeneralTaskDelete(context, todoProvider) {
                     const fileUri = vscode.Uri.joinPath(
                         vscode.workspace.workspaceFolders[0].uri, node.file
                     );
-                    const edit = new vscode.WorkspaceEdit();
-                    edit.delete(fileUri, new vscode.Range(
-                        new vscode.Position(node.line - 1, 0),
-                        new vscode.Position(node.line, 0)
-                    ));
-                    await vscode.workspace.applyEdit(edit);
                     const doc = await vscode.workspace.openTextDocument(fileUri);
-                    await doc.save();
+                    const ln = Number(node.line);
+                    if (ln >= 1 && ln <= doc.lineCount) {
+                        const edit = new vscode.WorkspaceEdit();
+                        edit.delete(fileUri, doc.lineAt(ln - 1).rangeIncludingLineBreak);
+                        await vscode.workspace.applyEdit(edit);
+                        const updated = await vscode.workspace.openTextDocument(fileUri);
+                        await updated.save();
+                    }
                 } catch (e) { /* file might be read-only — just remove from state */ }
             }
         } else {

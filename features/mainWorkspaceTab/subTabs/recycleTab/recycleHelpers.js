@@ -75,7 +75,9 @@ async function restoreItemMeta(item, context) {
 }
 
 /**
- * Delete a scanned comment line from a source file (sequential, one line at a time).
+ * Delete a scanned comment line from a source file.
+ * Uses rangeIncludingLineBreak — the most reliable way to delete a full line
+ * including its newline, works correctly for line 1, last line, and single-line files.
  */
 async function deleteLineFromFile(relFile, lineNumber) {
     if (!vscode.workspace.workspaceFolders?.[0]) return;
@@ -83,24 +85,16 @@ async function deleteLineFromFile(relFile, lineNumber) {
         const fileUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, relFile);
         const doc = await vscode.workspace.openTextDocument(fileUri);
         const ln = Number(lineNumber);
-        if (!ln || ln > doc.lineCount) return;
+        if (!ln || isNaN(ln) || ln < 1 || ln > doc.lineCount) return;
 
+        const lineObj = doc.lineAt(ln - 1); // 0-indexed
         const edit = new vscode.WorkspaceEdit();
-        const isLastLine = ln === doc.lineCount;
-        if (isLastLine && ln > 1) {
-            const prevLine = doc.lineAt(ln - 2);
-            edit.delete(fileUri, new vscode.Range(
-                new vscode.Position(prevLine.range.end.line, prevLine.range.end.character),
-                new vscode.Position(ln - 1, doc.lineAt(ln - 1).text.length)
-            ));
-        } else {
-            edit.delete(fileUri, new vscode.Range(
-                new vscode.Position(ln - 1, 0),
-                new vscode.Position(ln, 0)
-            ));
-        }
+        // rangeIncludingLineBreak includes the \n — guaranteed full-line removal
+        edit.delete(fileUri, lineObj.rangeIncludingLineBreak);
         await vscode.workspace.applyEdit(edit);
-        await doc.save();
+        // Re-open to get updated version, then save
+        const updatedDoc = await vscode.workspace.openTextDocument(fileUri);
+        await updatedDoc.save();
     } catch { /* read-only or missing — skip */ }
 }
 
