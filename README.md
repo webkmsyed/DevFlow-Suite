@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/webkmsyed/DevFlow-Suite/main/resources/icon.png" alt="DevFlow Suite" width="100" /><br><br>
+  <img src="./resources/icon.png" alt="DevFlow Suite" width="100" /><br><br>
   <h2>DevFlow Suite</h2>
-  <p>A workspace management extension for Visual Studio Code.<br>Task tracking, local file pinning, audit timelines, and a built-in recycle bin — all local, all private.</p>
+  <p>A workspace management extension for Visual Studio Code.<br>Task tracking, local file pinning, audit timelines, and a built-in recycle bin. All local, all private.</p>
 
   <a href="https://github.com/webkmsyed/DevFlow-Suite/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
   <a href="https://github.com/webkmsyed/DevFlow-Suite"><img src="https://img.shields.io/badge/open%20source-GitHub-181717?logo=github" alt="GitHub"></a>
@@ -16,15 +16,15 @@
 
 **Workspace and Task Manager**
 
-![DevFlow Suite Preview](https://raw.githubusercontent.com/webkmsyed/DevFlow-Suite/main/resources/devflow-suite-preview.gif)
+![DevFlow Suite Preview](./resources/devflow-suite-preview.gif)
 
 **Local Pin System**
 
-![Pin System Preview](https://raw.githubusercontent.com/webkmsyed/DevFlow-Suite/main/resources/devflow-suite-pin-preview.gif)
+![Pin System Preview](./resources/devflow-suite-pin-preview.gif)
 
 **Activity Timeline**
 
-![Timeline Preview](https://raw.githubusercontent.com/webkmsyed/DevFlow-Suite/main/resources/devflow-suite-timeline-preview.gif)
+![Timeline Preview](./resources/devflow-suite-timeline-preview.gif)
 
 ---
 
@@ -44,7 +44,7 @@
 
 ## Getting Started
 
-1. Install **DevFlow Suite** from the VS Code Marketplace (search `DevFlow Suite` by `jargoniseasy`).
+1. Install **DevFlow Suite** from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=jargoniseasy.devflow-suite).
 2. Click the DevFlow icon in the Activity Bar to open the Explorer.
 3. Tasks from your inline `//` comments are scanned automatically on file save.
 4. Use the pin button in the editor title bar to snapshot the current file state.
@@ -160,6 +160,10 @@ MIT License. See the [LICENSE](./LICENSE) file for details.
 | Threads | [threads.net/@jargoniseasy](https://www.threads.net/@jargoniseasy) |
 
 <br>
-<sub><a href="https://github.com/webkmsyed/DevFlow-Suite">Open Source Repository</a></sub>
+<sub>
+  <a href="https://github.com/webkmsyed/DevFlow-Suite">Open Source Repository</a>
+  &nbsp;·&nbsp;
+  <a href="https://marketplace.visualstudio.com/items?itemName=jargoniseasy.devflow-suite">VS Code Marketplace</a>
+</sub>
 
 </div>

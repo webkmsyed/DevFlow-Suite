@@ -38,11 +38,25 @@ Initial public release.
 - Corrected scanner race conditions where deleted comments were re-surfacing after a file save.
 - Fixed line-number shift bug causing adjacent comments to be hidden after a deletion.
 - Resolved recycle bin state sync issues on folder-level restore and permanent delete operations.
+- Fixed `isInTrash` check in tree renderer to use text-based matching instead of stale line numbers.
 
 ---
 
 ## Links
 
-- [GitHub Repository](https://github.com/webkmsyed/DevFlow-Suite)
-- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=jargoniseasy.devflow-suite)
-- [jargoniseasy.com](https://jargoniseasy.com)
+| | |
+|---|---|
+| VS Code Marketplace | [marketplace.visualstudio.com](https://marketplace.visualstudio.com/items?itemName=jargoniseasy.devflow-suite) |
+| GitHub Repository | [github.com/webkmsyed/DevFlow-Suite](https://github.com/webkmsyed/DevFlow-Suite) |
+| Jargoniseasy | [jargoniseasy.com](https://jargoniseasy.com) |
+
+## Developer (webkmsyed)
+
+| Platform | Link |
+|---|---|
+| Website | [webkmsyed.com](https://webkmsyed.com) |
+| GitHub | [github.com/webkmsyed](https://github.com/webkmsyed/) |
+| LinkedIn | [linkedin.com/in/webkmsyed](https://www.linkedin.com/in/webkmsyed/) |
+| X | [x.com/webkmsyed](https://x.com/webkmsyed) |
+| YouTube | [youtube.com/@webkmsyed](https://www.youtube.com/@webkmsyed) |
+| Dev.to | [dev.to/webkmsyed](https://dev.to/webkmsyed) |

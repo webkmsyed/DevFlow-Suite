@@ -4,11 +4,40 @@
   "description": "Zero-config VS Code extension for task management, local file snapshots, and audit timelines. 100% local, no backend required.",
   "version": "1.0.0",
   "publisher": "jargoniseasy",
+  "license": "MIT",
   "icon": "resources/icon.png",
+  "homepage": "https://github.com/webkmsyed/DevFlow-Suite#readme",
+  "bugs": {
+    "url": "https://github.com/webkmsyed/DevFlow-Suite/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/webkmsyed/DevFlow-Suite.git"
   },
+  "galleryBanner": {
+    "color": "#0d0d0d",
+    "theme": "dark"
+  },
+  "categories": [
+    "Other",
+    "Notebooks",
+    "Visualization"
+  ],
+  "keywords": [
+    "task manager",
+    "todo",
+    "workspace",
+    "productivity",
+    "pin",
+    "snapshot",
+    "timeline",
+    "audit",
+    "recycle bin",
+    "devflow",
+    "comments",
+    "comments managers",
+    "code comments"
+  ],
   "engines": { "vscode": "^1.75.0" },
   "main": "./extension.js",
   "activationEvents": ["*"],
