@@ -90,12 +90,20 @@ function getStandardItems(context, folderName) {
         return globalTags[key] || '';
     };
 
+    // Build text-based trash lookup (same approach as scanner) — line numbers shift after deletions,
+    // so we match by comment text to avoid falsely hiding comments that moved to a trashed line's old position.
+    const trashedTextsByFile = {};
+    trashData.filter(t => t.isScanned && t.originalFile && t.text).forEach(t => {
+        if (!trashedTextsByFile[t.originalFile]) trashedTextsByFile[t.originalFile] = new Set();
+        trashedTextsByFile[t.originalFile].add((t.text || '').trim());
+    });
+
     const isInTrash = (item) => {
         if (item.file) {
-            return trashData.some(t =>
-                t.originalFile === item.file && t.originalLine === item.line
-            );
+            // Text-based: check if this comment's text is in trash for this file
+            return !!trashedTextsByFile[item.file]?.has((item.text || '').trim());
         }
+        // Manual task: match by id
         return trashData.some(t => String(t.id) === String(item.id));
     };
 
