@@ -56,6 +56,8 @@ function initScanner(context, todoProvider) {
                     const commentText = trimmed.replace(/^\/\/\s*/, '').trim();
                     if (!commentText || commentText.startsWith('/')) return; // skip /// jsdoc
 
+                    const key = `${relativePath}:${lineNum}`; // unique id for this comment position
+
                     // Skip comments that are in the Recycle Bin (match by text, not line number).
                     if (trashedTextsByFile[relativePath]?.has(commentText)) return;
 
