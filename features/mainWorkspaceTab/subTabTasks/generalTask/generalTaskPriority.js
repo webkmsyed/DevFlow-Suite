@@ -1,4 +1,4 @@
-// File: features/subTabTasks/general/generalTaskPriority.js
+﻿// File: features/subTabTasks/general/generalTaskPriority.js
 const vscode = require('vscode');
 const { logEvent } = require('../../../engine/logger');
 
@@ -7,8 +7,7 @@ const { logEvent } = require('../../../engine/logger');
  * Logic: Persistent in original folder, metadata for UI color.
  */
 function registerGeneralTaskPriority(context, todoProvider) {
-    
-    // ⭐ Command: Toggle Task Priority (jargon.taskSavePri)
+
     context.subscriptions.push(vscode.commands.registerCommand('jargon.taskSavePri', async (node) => {
         if (!node) return;
 

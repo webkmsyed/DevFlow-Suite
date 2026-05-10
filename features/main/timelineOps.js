@@ -1,4 +1,4 @@
-// File: features/main/timelineOps.js
+﻿// File: features/main/timelineOps.js
 const vscode = require('vscode');
 const { toggleLogStar, editLogNote } = require('../engine/logger');
 
@@ -80,7 +80,6 @@ function registerTimeline(context) {
         currentPanel.onDidDispose(() => { currentPanel = null; }, null, context.subscriptions);
     }));
 
-    // ── IMPORT TIMELINE (PROJECT FOLDERS) ─────────────────────────
     context.subscriptions.push(vscode.commands.registerCommand('jargon.importTimeline', async (targetPath) => {
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
         if (!workspaceRoot) return;
@@ -136,7 +135,6 @@ function registerTimeline(context) {
         }
     }));
 
-    // ── EXPORT TIMELINE (DIRECT SAVE + PREVIEW) ─────────────────────────
     context.subscriptions.push(vscode.commands.registerCommand('jargon.exportTimeline', async (filteredLogs) => {
         const logs = Array.isArray(filteredLogs) ? filteredLogs : (context.globalState.get('auditLogs', []) || []);
         if (logs.length === 0) {

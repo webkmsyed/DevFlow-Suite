@@ -1,4 +1,4 @@
-// File: features/todoProvider.js
+﻿// File: features/todoProvider.js
 const vscode = require('vscode');
 const {
     getRoots, getStandardItems, getPriorityItems,
@@ -29,7 +29,6 @@ class TodoProvider {
         treeItem.id = element._vsTreeId || (element.id ? String(element.id) : undefined);
         treeItem.iconPath = element.iconPath;
 
-        // ── Tag Display ─────────────────────────────────────────────────────
         const tags    = this.context.globalState.get('itemTags', {}) || {};
         const itemKey = element.id ? String(element.id) : `${element.file}:${element.line}`;
         const folderKey  = `folder:${element.originalText}`;

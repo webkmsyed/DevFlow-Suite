@@ -1,8 +1,8 @@
-// File: features/subTabs/general/generalTabSorting.js
+﻿// File: features/subTabs/general/generalTabSorting.js
 const vscode = require('vscode');
 
 function registerGeneralTabSorting(context, todoProvider) {
-    // 🔀 Command: Sort Tab (jargon.tabSort)
+
     context.subscriptions.push(vscode.commands.registerCommand('jargon.tabSort', async () => {
         const mode = await vscode.window.showQuickPick([
             'A-Z (Alphabetical)', 

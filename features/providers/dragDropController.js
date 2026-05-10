@@ -1,4 +1,4 @@
-// File: features/providers/dragDropController.js
+﻿// File: features/providers/dragDropController.js
 const vscode = require('vscode');
 const { recordHistory } = require('../commands/historyOps');
 const { logEvent } = require('../engine/logger');
@@ -33,7 +33,6 @@ class DragDropController {
         let targetLabel   = target.originalText || target.label || 'General Workspace';
         let targetContext = target.contextValue  || '';
 
-        // ── Resolve target context ─────────────────────────────────────────
         if (!FOLDER_CONTEXTS.includes(targetContext)) {
             // Dropped on a task — figure out its parent folder
             if (targetContext === 'priorityTask' || targetContext === 'priorityFolder') {
@@ -49,7 +48,6 @@ class DragDropController {
             }
         }
 
-        // ── Guards ────────────────────────────────────────────────────────
         // Don't allow dragging a tab/folder header
         if (FOLDER_CONTEXTS.includes(sourceItem.contextValue)) return;
 

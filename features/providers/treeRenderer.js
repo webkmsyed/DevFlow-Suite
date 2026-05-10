@@ -1,7 +1,6 @@
-// File: features/providers/treeRenderer.js
+﻿B// File: features/providers/treeRenderer.js
 const vscode = require('vscode');
 
-// ── Root Tabs ─────────────────────────────────────────────────────────────
 function getRoots(context) {
     const userFolders = context.globalState.get('userFolders', []) || [];
     const sortOrder = context.globalState.get('sortOrder', 'Default') || 'Default';
@@ -77,7 +76,6 @@ function getRoots(context) {
     return [...userTabs, ...pinnedTabs];
 }
 
-// ── Standard Tab Items (General + User Created) ───────────────────────────
 function getStandardItems(context, folderName) {
     const sortOrder       = context.globalState.get('sortOrder', 'Default') || 'Default';
     const activeFilter    = context.globalState.get('activeFilter', 'All Items') || 'All Items';
@@ -139,7 +137,6 @@ function getStandardItems(context, folderName) {
     return combined;
 }
 
-// ── Priority Tab ──────────────────────────────────────────────────────────
 function getPriorityItems(context) {
     const priTasks = context.globalState.get('priorityTasks', []) || [];
 
@@ -170,7 +167,6 @@ function getPriorityFolderItems(context, folderName) {
         .map(t => formatPriorityTask(t));
 }
 
-// ── Recycle Bin ───────────────────────────────────────────────────────────
 function getRecycleItems(context) {
     const trashData = context.globalState.get('trashData', []) || [];
 
@@ -201,7 +197,6 @@ function getRecycleFolderItems(context, folderName) {
         .map(t => formatRecycleTask(t));
 }
 
-// ── Search Results ────────────────────────────────────────────────────────
 function getSearchResults(context, query) {
     if (!query || query.trim() === '') return [];
     const q = query.toLowerCase();
@@ -220,7 +215,6 @@ function getSearchResults(context, query) {
     ];
 }
 
-// ── Formatters ────────────────────────────────────────────────────────────
 function formatTask(item, contextValue, parentFolder) {
     const locationHint = item.file
         ? `📄 ${item.file}:${item.line}`

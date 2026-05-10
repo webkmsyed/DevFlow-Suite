@@ -1,4 +1,4 @@
-// File: features/subTabTasks/recycle/recycleTaskDeletePerm.js
+﻿// File: features/subTabTasks/recycle/recycleTaskDeletePerm.js
 const vscode = require('vscode');
 const { deleteItemsFromFiles } = require('../../subTabs/recycleTab/recycleHelpers');
 
@@ -8,7 +8,6 @@ function registerRecycleTaskDeletePerm(context, todoProvider) {
 
         let trash = context.globalState.get('trashData', []) || [];
 
-        // ── Folder node: permanently delete all items in this recycle folder ──
         if (node.contextValue === 'recycleFolder') {
             const folderName = node.originalText || node.label;
             const folderItems = trash.filter(t => (t.deletedFrom || 'Unknown') === folderName);
@@ -47,7 +46,6 @@ function registerRecycleTaskDeletePerm(context, todoProvider) {
             return;
         }
 
-        // ── Single task node ───────────────────────────────────────────────
         const itemToDelete = trash.find(t => {
             if (t._isFolderMarker) return false;
             return t.isScanned

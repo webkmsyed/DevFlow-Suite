@@ -1,4 +1,4 @@
-// File: features/subTabs/general/generalTabDelete.js
+﻿// File: features/subTabs/general/generalTabDelete.js
 const vscode = require('vscode');
 const { recordHistory } = require('../../../commands/historyOps');
 const { logEvent } = require('../../../engine/logger');
@@ -55,7 +55,6 @@ function registerGeneralTabDelete(context, todoProvider) {
             );
             await context.globalState.update('priorityTasks', priorityTasks);
 
-            // ── COMMIT STATE FIRST so scanner sees correct trashData/fileComments ──
             await context.globalState.update('trashData', trash);
             await context.globalState.update('manualTasks', manualTasks);
             await context.globalState.update('fileComments', fileComments);
@@ -103,7 +102,6 @@ function registerGeneralTabDelete(context, todoProvider) {
             vscode.window.showInformationMessage("DevFlow: All General Workspace items moved to Recycle Bin.");
             return;
         }
-
 
         // Ask what to do with tasks inside
         const action = await vscode.window.showWarningMessage(
@@ -162,7 +160,6 @@ function registerGeneralTabDelete(context, todoProvider) {
                 byFile[c.file].push(c.line);
             });
 
-            // ── COMMIT STATE FIRST so scanner sees correct trashData/fileComments ──
             manualTasks = manualTasks.filter(t => t.folder !== folderName);
             fileComments = fileComments.filter(c => c.target !== folderName);
             await context.globalState.update('trashData', trash);

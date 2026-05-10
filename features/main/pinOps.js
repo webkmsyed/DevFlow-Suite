@@ -1,4 +1,4 @@
-const vscode = require('vscode');
+﻿const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -9,12 +9,11 @@ let isShowingAllPins = false;
 let currentPanelContext = null;
 
 function registerPinOps(context) {
-    // ── Command: Pin Current State (Manual) ─────────────────────────
+
     context.subscriptions.push(vscode.commands.registerCommand('jargon.pinCurrentFile', async () => {
         await createPin(true);
     }));
 
-    // ── Command: View All Workspace Pins (no active file required) ───
     context.subscriptions.push(vscode.commands.registerCommand('jargon.viewAllPins', async () => {
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
         if (!workspaceRoot) {
@@ -239,7 +238,6 @@ function registerPinOps(context) {
         });
     }));
 
-    // ── Command: Set Auto-Pin Frequency ─────────────────────────────
     context.subscriptions.push(vscode.commands.registerCommand('jargon.setPinFrequency', async () => {
         const currentFreq = context.globalState.get('devflowPinFreq', 5);
         const input = await vscode.window.showInputBox({

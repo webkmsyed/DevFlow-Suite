@@ -1,4 +1,4 @@
-// File: features/main/exportOps.js
+﻿// File: features/main/exportOps.js
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
@@ -36,7 +36,6 @@ async function doExport(context, folderName, taskText, scope) {
 
     if (!format) return;
 
-    // ── Collect data using Tree Renderer (respects sorting & filtering) ────
     const globalTags = context.globalState.get('itemTags', {}) || {};
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
 
@@ -194,7 +193,6 @@ async function doExport(context, folderName, taskText, scope) {
         return;
     }
 
-    // ── Format & Output ────────────────────────────────────────────────────
     const timestamp = new Date().toISOString().slice(0, 10);
     const safeName  = (folderName || scope || 'devflow').replace(/[^a-z0-9]/gi, '_');
 

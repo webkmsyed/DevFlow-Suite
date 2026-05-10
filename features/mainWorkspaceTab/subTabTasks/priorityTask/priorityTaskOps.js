@@ -1,11 +1,9 @@
-// File: features/subTabTasks/priority/priorityTaskOps.js
+﻿// File: features/subTabTasks/priority/priorityTaskOps.js
 const vscode = require('vscode');
 const { logEvent } = require('../../../engine/logger');
 
-
 function registerPriorityTaskOps(context, todoProvider) {
 
-    // ── REMOVE from Priority (handles BOTH priorityFolder and priorityTask) ─
     context.subscriptions.push(vscode.commands.registerCommand('jargon.taskRemovePri', async (node) => {
         if (!node) return;
 
@@ -36,7 +34,6 @@ function registerPriorityTaskOps(context, todoProvider) {
         }
     }));
 
-    // ── COPY ─────────────────────────────────────────────────────────────
     context.subscriptions.push(vscode.commands.registerCommand('jargon.priTaskCopy', async (node) => {
         if (!node) return;
         const text = node.originalText || node.label || node.text || '';
@@ -44,11 +41,9 @@ function registerPriorityTaskOps(context, todoProvider) {
         vscode.window.showInformationMessage('DevFlow: Copied to clipboard.');
     }));
 
-    // ── TAG (priority tasks use same emoji system) ────────────────────────
     // Note: jargon.taskTag is already registered in generalTaskTag.js and works for all contexts.
     // No re-registration needed here.
 
-    // ── CLEAR ALL ────────────────────────────────────────────────────────
     // Note: jargon.priRemoveAll is registered in priorityTabClear.js — no duplicate needed.
 }
 

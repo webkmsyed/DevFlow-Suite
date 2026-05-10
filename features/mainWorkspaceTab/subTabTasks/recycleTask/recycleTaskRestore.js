@@ -1,4 +1,4 @@
-// File: features/subTabTasks/recycle/recycleTaskRestore.js
+﻿// File: features/subTabTasks/recycle/recycleTaskRestore.js
 const vscode = require('vscode');
 const { logEvent } = require('../../../engine/logger');
 const { recordHistory } = require('../../../commands/historyOps');
@@ -11,7 +11,6 @@ function registerRecycleTaskRestore(context, todoProvider) {
 
         let trash = context.globalState.get('trashData', []) || [];
 
-        // ── Folder node: restore entire recycled folder ────────────────────
         if (node.contextValue === 'recycleFolder' || node._recycleFolder) {
             const folderName = node._recycleFolder || node.originalText || node.label;
             const folderItems = trash.filter(t =>
@@ -25,7 +24,6 @@ function registerRecycleTaskRestore(context, todoProvider) {
                 await context.globalState.update('userFolders', userFolders);
             }
 
-            // ── COMMIT TRASH FIRST so scanner (triggered by doc.save) sees
             //    these items as restored, not trashed — otherwise scanner skips them
             trash = trash.filter(t => (t.deletedFrom || 'Unknown') !== folderName);
             await context.globalState.update('trashData', trash);
@@ -42,7 +40,6 @@ function registerRecycleTaskRestore(context, todoProvider) {
             return;
         }
 
-        // ── Single task node ───────────────────────────────────────────────
         const itemIndex = trash.findIndex(t => {
             if (t._isFolderMarker) return false;
             if (t.isScanned) {

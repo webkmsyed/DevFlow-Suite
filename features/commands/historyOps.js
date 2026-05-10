@@ -1,4 +1,4 @@
-// File: features/commands/historyOps.js
+﻿// File: features/commands/historyOps.js
 const vscode = require('vscode');
 
 let undoStack = [];
@@ -90,5 +90,4 @@ async function updateState(context, state) {
     await context.globalState.update('fileComments', state.fileComments);
 }
 
-// 🔥 Only export functions, registration is handled in workspaceOps
 module.exports = { recordHistory, undo, redo };
