@@ -18,7 +18,6 @@ async function getSafeInsertPosition(fileUri, originalLine) {
 
 /**
  * Restore a single trash item back to the workspace (file or manualTasks).
- * Returns false if something went wrong (caller can push to manual as fallback).
  */
 async function restoreItemToWorkspace(item, context) {
     const targetFolder = item._originalFolder || item.deletedFrom || 'General Workspace';
@@ -28,12 +27,14 @@ async function restoreItemToWorkspace(item, context) {
             const fileUri = vscode.Uri.joinPath(
                 vscode.workspace.workspaceFolders[0].uri, item.originalFile
             );
-            const pos = await getSafeInsertPosition(fileUri, item.originalLine);
-            const edit = new vscode.WorkspaceEdit();
-            edit.insert(fileUri, pos, `// ${item.text}\n`);
-            await vscode.workspace.applyEdit(edit);
             const doc = await vscode.workspace.openTextDocument(fileUri);
-            await doc.save();
+            const rawLine = Number(item.originalLine) || 1;
+            const safeLine = Math.max(1, Math.min(rawLine, doc.lineCount + 1));
+            const edit = new vscode.WorkspaceEdit();
+            edit.insert(fileUri, new vscode.Position(safeLine - 1, 0), `// ${item.text}\n`);
+            await vscode.workspace.applyEdit(edit);
+            const updated = await vscode.workspace.openTextDocument(fileUri);
+            await updated.save();
             return true;
         } catch {
             // Fall through to manual restore
@@ -45,6 +46,73 @@ async function restoreItemToWorkspace(item, context) {
     manual.push({ id: item.id || Date.now() + Math.random(), text: item.text, folder: targetFolder });
     await context.globalState.update('manualTasks', manual);
     return false;
+}
+
+/**
+ * Restore a BATCH of trash items correctly:
+ * - Scanned items grouped per file, sorted ASCENDING by originalLine
+ *   (ascending so each insertion keeps subsequent original line numbers valid)
+ * - Manual items batched into a single globalState write
+ * - Falls back to manual if file insert fails
+ */
+async function restoreItemsBatch(items, context) {
+    const scannedByFile = {};
+    const manualBatch = [];
+
+    for (const item of items) {
+        if (item._isFolderMarker) continue;
+        const targetFolder = item._originalFolder || item.deletedFrom || 'General Workspace';
+        if (item.isScanned && item.originalFile && vscode.workspace.workspaceFolders?.[0]) {
+            if (!scannedByFile[item.originalFile]) scannedByFile[item.originalFile] = [];
+            scannedByFile[item.originalFile].push({ item, targetFolder });
+        } else {
+            manualBatch.push({
+                id: item.id || Date.now() + Math.random(),
+                text: item.text,
+                folder: targetFolder
+            });
+        }
+    }
+
+    // Restore scanned comments per file — ascending line order
+    for (const [relFile, entries] of Object.entries(scannedByFile)) {
+        // Sort ascending: insert line 1 first, then 3, then 5 etc.
+        // Each insertion shifts later content down, so original positions stay correct.
+        const sorted = entries.slice().sort((a, b) =>
+            Number(a.item.originalLine) - Number(b.item.originalLine)
+        );
+        try {
+            const fileUri = vscode.Uri.joinPath(
+                vscode.workspace.workspaceFolders[0].uri, relFile
+            );
+            for (const { item, targetFolder } of sorted) {
+                const doc = await vscode.workspace.openTextDocument(fileUri);
+                const rawLine = Number(item.originalLine) || 1;
+                const safeLine = Math.max(1, Math.min(rawLine, doc.lineCount + 1));
+                const edit = new vscode.WorkspaceEdit();
+                edit.insert(fileUri, new vscode.Position(safeLine - 1, 0), `// ${item.text}\n`);
+                await vscode.workspace.applyEdit(edit);
+                const updated = await vscode.workspace.openTextDocument(fileUri);
+                await updated.save();
+            }
+        } catch {
+            // Fallback: add all as manual tasks
+            for (const { item, targetFolder } of sorted) {
+                manualBatch.push({
+                    id: item.id || Date.now() + Math.random(),
+                    text: item.text,
+                    folder: targetFolder
+                });
+            }
+        }
+    }
+
+    // Batch-write all manual items at once
+    if (manualBatch.length > 0) {
+        let manual = context.globalState.get('manualTasks', []) || [];
+        manual = manual.concat(manualBatch);
+        await context.globalState.update('manualTasks', manual);
+    }
 }
 
 /**
@@ -137,6 +205,7 @@ async function removeFolderFromPriority(folderName, context) {
 module.exports = {
     getSafeInsertPosition,
     restoreItemToWorkspace,
+    restoreItemsBatch,
     restoreItemMeta,
     deleteLineFromFile,
     deleteItemsFromFiles,

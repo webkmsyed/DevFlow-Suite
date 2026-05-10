@@ -2,7 +2,7 @@
 const vscode = require('vscode');
 const { logEvent } = require('../../../engine/logger');
 const { recordHistory } = require('../../../commands/historyOps');
-const { restoreItemToWorkspace, restoreItemMeta } = require('./recycleHelpers');
+const { restoreItemsBatch, restoreItemMeta } = require('./recycleHelpers');
 
 function registerRecycleTabRestoreAll(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.recRestoreAll', async () => {
@@ -35,8 +35,9 @@ function registerRecycleTabRestoreAll(context, todoProvider) {
         // Clear trash BEFORE restoring so scanner triggered by doc.save won't re-add items
         await context.globalState.update('trashData', []);
 
+        // Restore all items (batch: sorted per file ascending, manual batched)
+        await restoreItemsBatch(realItems, context);
         for (const item of realItems) {
-            await restoreItemToWorkspace(item, context);
             await restoreItemMeta(item, context);
         }
 

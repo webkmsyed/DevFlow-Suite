@@ -2,7 +2,7 @@
 const vscode = require('vscode');
 const { logEvent } = require('../../../engine/logger');
 const { recordHistory } = require('../../../commands/historyOps');
-const { restoreItemToWorkspace, restoreItemMeta } = require('../../subTabs/recycleTab/recycleHelpers');
+const { restoreItemToWorkspace, restoreItemsBatch, restoreItemMeta } = require('../../subTabs/recycleTab/recycleHelpers');
 
 function registerRecycleTaskRestore(context, todoProvider) {
     context.subscriptions.push(vscode.commands.registerCommand('jargon.taskRestore', async (node) => {
@@ -30,9 +30,9 @@ function registerRecycleTaskRestore(context, todoProvider) {
             trash = trash.filter(t => (t.deletedFrom || 'Unknown') !== folderName);
             await context.globalState.update('trashData', trash);
 
-            // Now restore items to files / manualTasks
+            // Restore items using batch (sorted per file, ascending line order)
+            await restoreItemsBatch(folderItems, context);
             for (const item of folderItems) {
-                await restoreItemToWorkspace(item, context);
                 await restoreItemMeta(item, context);
             }
 
