@@ -1,4 +1,4 @@
-﻿B// File: features/providers/treeRenderer.js
+﻿// File: features/providers/treeRenderer.js
 const vscode = require('vscode');
 
 function getRoots(context) {

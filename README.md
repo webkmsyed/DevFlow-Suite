@@ -1,13 +1,13 @@
 <div align="center">
-  <img src="resources/icon.png" alt="DevFlow Suite" width="100" /><br><br>
+  <img src="https://raw.githubusercontent.com/webkmsyed/DevFlow-Suite/main/resources/icon.png" alt="DevFlow Suite" width="100" /><br><br>
   <h2>DevFlow Suite</h2>
   <p>A workspace management extension for Visual Studio Code.<br>Task tracking, local file pinning, audit timelines, and a built-in recycle bin — all local, all private.</p>
 
-  <a href="https://marketplace.visualstudio.com/items?itemName=jargoniseasy.devflow-suite"><img src="https://img.shields.io/visual-studio-marketplace/v/jargoniseasy.devflow-suite?color=0066CC&label=VS%20Code%20Marketplace" alt="Marketplace Version"></a>
   <a href="https://github.com/webkmsyed/DevFlow-Suite/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
   <a href="https://github.com/webkmsyed/DevFlow-Suite"><img src="https://img.shields.io/badge/open%20source-GitHub-181717?logo=github" alt="GitHub"></a>
+  <a href="https://github.com/webkmsyed/DevFlow-Suite/blob/main/changelog.md"><img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version"></a>
   <br><br>
-  A <a href="https://jargoniseasy.com">jargoniseasy.com</a> product &nbsp;·&nbsp; Built by <a href="https://webkmsyed.com">Syed Khishamuddin (webkmsyed)</a>
+  A <a href="https://jargoniseasy.com">Jargoniseasy</a> open-source project, built by <a href="https://github.com/webkmsyed">webkmsyed</a>
 </div>
 
 ---
@@ -16,21 +16,21 @@
 
 **Workspace and Task Manager**
 
-![DevFlow Suite Preview](resources/devflow-suite-preview.gif)
+![DevFlow Suite Preview](https://raw.githubusercontent.com/webkmsyed/DevFlow-Suite/main/resources/devflow-suite-preview.gif)
 
 **Local Pin System**
 
-![Pin System Preview](resources/devflow-suite-pin-preview.gif)
+![Pin System Preview](https://raw.githubusercontent.com/webkmsyed/DevFlow-Suite/main/resources/devflow-suite-pin-preview.gif)
 
 **Activity Timeline**
 
-![Timeline Preview](resources/devflow-suite-timeline-preview.gif)
+![Timeline Preview](https://raw.githubusercontent.com/webkmsyed/DevFlow-Suite/main/resources/devflow-suite-timeline-preview.gif)
 
 ---
 
 ## Features
 
-- **Task Explorer**: A sidebar workspace manager with custom folders, priority tab, scanned inline comments, notes, tags, and a recycle bin.
+- **Task Explorer**: Sidebar workspace manager with custom folders, priority tab, scanned inline comments, notes, tags, and a recycle bin.
 - **Smart Code Scanning**: Automatically scans your workspace for inline `//` comments and organizes them into tabs based on folder name matching.
 - **Local Pin System**: Snapshot any file at any point. Compare past states with the current file using a side-by-side diff view.
 - **Activity Timeline**: Every extension action is logged with timestamps, file paths, and line references. Export as JSON, CSV, TXT, or PDF.
@@ -44,7 +44,7 @@
 
 ## Getting Started
 
-1. Install **DevFlow Suite** from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=jargoniseasy.devflow-suite).
+1. Install **DevFlow Suite** from the VS Code Marketplace (search `DevFlow Suite` by `jargoniseasy`).
 2. Click the DevFlow icon in the Activity Bar to open the Explorer.
 3. Tasks from your inline `//` comments are scanned automatically on file save.
 4. Use the pin button in the editor title bar to snapshot the current file state.
@@ -127,39 +127,39 @@ MIT License. See the [LICENSE](./LICENSE) file for details.
 
 <div align="center">
 
-**DevFlow Suite** is a <a href="https://jargoniseasy.com">jargoniseasy.com</a> open-source project.
+**DevFlow Suite** is a [Jargoniseasy](https://jargoniseasy.com) open-source project.
 
-### Developer
+### webkmsyed
 
-| | |
+| Platform | Link |
 |---|---|
 | Website | [webkmsyed.com](https://webkmsyed.com) |
 | GitHub | [github.com/webkmsyed](https://github.com/webkmsyed/) |
 | LinkedIn | [linkedin.com/in/webkmsyed](https://www.linkedin.com/in/webkmsyed/) |
-| X (Twitter) | [x.com/webkmsyed](https://x.com/webkmsyed) |
+| X | [x.com/webkmsyed](https://x.com/webkmsyed) |
 | Bluesky | [bsky.app/profile/webkmsyed.com](https://bsky.app/profile/webkmsyed.com) |
 | YouTube | [youtube.com/@webkmsyed](https://www.youtube.com/@webkmsyed) |
 | Dev.to | [dev.to/webkmsyed](https://dev.to/webkmsyed) |
 | Daily.dev | [app.daily.dev/webkmsyed](https://app.daily.dev/webkmsyed) |
 | Instagram | [instagram.com/webkmyed](https://instagram.com/webkmyed) |
-| Threads | [@webkmsyed](https://www.threads.net/@webkmsyed) |
+| Threads | [threads.net/@webkmsyed](https://www.threads.net/@webkmsyed) |
 
-### Project / Brand
+### Jargoniseasy
 
-| | |
+| Platform | Link |
 |---|---|
 | Website | [jargoniseasy.com](https://jargoniseasy.com) |
 | GitHub | [github.com/jargoniseasy](https://github.com/jargoniseasy/) |
 | LinkedIn | [linkedin.com/in/jargoniseasy](https://www.linkedin.com/in/jargoniseasy/) |
-| X (Twitter) | [x.com/jargoniseasy](https://x.com/jargoniseasy) |
+| X | [x.com/jargoniseasy](https://x.com/jargoniseasy) |
 | Bluesky | [bsky.app/profile/jargoniseasy.com](https://bsky.app/profile/jargoniseasy.com) |
 | YouTube | [youtube.com/@jargoniseasy](https://www.youtube.com/@jargoniseasy) |
 | Dev.to | [dev.to/jargoniseasy](https://dev.to/jargoniseasy) |
 | Daily.dev | [app.daily.dev/jargoniseasy](https://app.daily.dev/jargoniseasy) |
 | Instagram | [instagram.com/jargoniseasy](https://instagram.com/jargoniseasy) |
-| Threads | [@jargoniseasy](https://www.threads.net/@jargoniseasy) |
+| Threads | [threads.net/@jargoniseasy](https://www.threads.net/@jargoniseasy) |
 
 <br>
-<sub><a href="https://github.com/webkmsyed/DevFlow-Suite">Open Source on GitHub</a> &nbsp;·&nbsp; <a href="https://marketplace.visualstudio.com/items?itemName=jargoniseasy.devflow-suite">VS Code Marketplace</a></sub>
+<sub><a href="https://github.com/webkmsyed/DevFlow-Suite">Open Source Repository</a></sub>
 
 </div>
