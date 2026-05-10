@@ -25,14 +25,17 @@ function registerRecycleTaskRestore(context, todoProvider) {
                 await context.globalState.update('userFolders', userFolders);
             }
 
+            // ── COMMIT TRASH FIRST so scanner (triggered by doc.save) sees
+            //    these items as restored, not trashed — otherwise scanner skips them
+            trash = trash.filter(t => (t.deletedFrom || 'Unknown') !== folderName);
+            await context.globalState.update('trashData', trash);
+
+            // Now restore items to files / manualTasks
             for (const item of folderItems) {
                 await restoreItemToWorkspace(item, context);
                 await restoreItemMeta(item, context);
             }
 
-            // Remove all entries for this folder from trash
-            trash = trash.filter(t => (t.deletedFrom || 'Unknown') !== folderName);
-            await context.globalState.update('trashData', trash);
             todoProvider.refresh();
             logEvent(context, 'Restore', `'${folderName}' 'Recycle Bin -> Folder Restored'`);
             vscode.window.showInformationMessage(`DevFlow: Folder "${folderName}" restored.`);
