@@ -16,15 +16,15 @@
 
 **Workspace and Task Manager**
 
-![DevFlow Suite Preview](./resources/devflow-suite-preview.gif)
+![DevFlow Suite Preview](https://raw.githubusercontent.com/webkmsyed/DevFlow-Suite/main/resources/devflow-suite-preview.gif)
 
 **Local Pin System**
 
-![Pin System Preview](./resources/devflow-suite-pin-preview.gif)
+![Pin System Preview](https://raw.githubusercontent.com/webkmsyed/DevFlow-Suite/main/resources/devflow-suite-pin-preview.gif)
 
 **Activity Timeline**
 
-![Timeline Preview](./resources/devflow-suite-timeline-preview.gif)
+![Timeline Preview](https://raw.githubusercontent.com/webkmsyed/DevFlow-Suite/main/resources/devflow-suite-timeline-preview.gif)
 
 ---
 

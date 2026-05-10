@@ -16,3 +16,5 @@ CONTRIBUTING.md
 eslint.config.mjs
 jsconfig.json
 package-lock.json
+# GIFs excluded from VSIX (too large for upload) - served via GitHub raw URLs in README
+resources/*.gif
