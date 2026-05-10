@@ -43,19 +43,43 @@ function registerGeneralTaskDelete(context, todoProvider) {
         };
 
         if (isScanned) {
-            // For scanned tasks: remove from fileComments (physical delete handled if needed)
+            const deletedLine = Number(node.line);
             let fileComments = context.globalState.get('fileComments', []) || [];
-            fileComments = fileComments.filter(c => !(c.file === node.file && c.line === node.line));
+
+            // Remove the deleted comment
+            fileComments = fileComments.filter(c => !(c.file === node.file && Number(c.line) === deletedLine));
+
+            // Shift line numbers DOWN for all comments in the same file that are BELOW the deleted line
+            // (because deleting a line causes everything below to shift up by 1 in the file)
+            fileComments = fileComments.map(c => {
+                if (c.file === node.file && Number(c.line) > deletedLine) {
+                    return { ...c, line: Number(c.line) - 1, id: `${c.file}:${Number(c.line) - 1}` };
+                }
+                return c;
+            });
             await context.globalState.update('fileComments', fileComments);
 
-            // Optionally delete from source file
+            // Also shift trashData originalLine for items in same file below deleted line
+            // (keeps restore positions accurate if user restores them later)
+            trash = trash.map(t => {
+                if (t.isScanned && t.originalFile === node.file && Number(t.originalLine) > deletedLine) {
+                    return { ...t, originalLine: Number(t.originalLine) - 1 };
+                }
+                return t;
+            });
+
+            // Save trash + push new entry BEFORE file save (scanner race fix)
+            trash.push(trashEntry);
+            await context.globalState.update('trashData', trash);
+
+            // Delete from source file
             if (node.file && vscode.workspace.workspaceFolders?.[0]) {
                 try {
                     const fileUri = vscode.Uri.joinPath(
                         vscode.workspace.workspaceFolders[0].uri, node.file
                     );
                     const doc = await vscode.workspace.openTextDocument(fileUri);
-                    const ln = Number(node.line);
+                    const ln = deletedLine;
                     if (ln >= 1 && ln <= doc.lineCount) {
                         const edit = new vscode.WorkspaceEdit();
                         edit.delete(fileUri, doc.lineAt(ln - 1).rangeIncludingLineBreak);
@@ -79,8 +103,11 @@ function registerGeneralTaskDelete(context, todoProvider) {
         });
         await context.globalState.update('priorityTasks', pri);
 
-        trash.push(trashEntry);
-        await context.globalState.update('trashData', trash);
+        // For manual tasks: push to trash here (scanned tasks handled above)
+        if (!isScanned) {
+            trash.push(trashEntry);
+            await context.globalState.update('trashData', trash);
+        }
 
         todoProvider.refresh();
         logEvent(context, 'Delete',

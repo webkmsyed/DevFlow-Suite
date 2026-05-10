@@ -22,13 +22,17 @@ function initScanner(context, todoProvider) {
             // These are preserved across scans. Auto-assignments are always re-evaluated.
             const manualAssignments = context.globalState.get('manualAssignments', {}) || {};
 
-            // Build a Set of trashed scanned-task keys so the scanner never re-surfaces them.
+            // Build a per-file set of trashed comment TEXTS (not line numbers).
+            // Line numbers shift whenever a comment above is deleted — using text avoids
+            // the scanner wrongly skipping a different comment that moved to the old position.
             const trash = context.globalState.get('trashData', []) || [];
-            const trashedKeys = new Set(
-                trash
-                    .filter(t => t.isScanned && t.originalFile && t.originalLine)
-                    .map(t => `${t.originalFile}:${t.originalLine}`)
-            );
+            const trashedTextsByFile = {};
+            trash
+                .filter(t => t.isScanned && t.originalFile && t.text)
+                .forEach(t => {
+                    if (!trashedTextsByFile[t.originalFile]) trashedTextsByFile[t.originalFile] = new Set();
+                    trashedTextsByFile[t.originalFile].add(t.text.trim());
+                });
 
             const comments = [];
 
@@ -52,10 +56,8 @@ function initScanner(context, todoProvider) {
                     const commentText = trimmed.replace(/^\/\/\s*/, '').trim();
                     if (!commentText || commentText.startsWith('/')) return; // skip /// jsdoc
 
-                    const key = `${relativePath}:${lineNum}`;
-
-                    // Skip comments that the user has already moved to the Recycle Bin.
-                    if (trashedKeys.has(key)) return;
+                    // Skip comments that are in the Recycle Bin (match by text, not line number).
+                    if (trashedTextsByFile[relativePath]?.has(commentText)) return;
 
                     let targetFolder = 'General Workspace';
 
