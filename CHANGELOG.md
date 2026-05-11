@@ -6,7 +6,31 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This p
 
 ---
 
-## [1.0.0] - 2025-05-10
+## [1.0.2] - 2026-05-11
+
+### Fixed
+
+- Fixed character encoding corruption (`Â`) in README footer caused by PowerShell UTF-8 BOM write.
+- Updated version badge in README to reflect current release.
+
+---
+
+## [1.0.1] - 2026-05-11
+
+
+### Added
+
+- **Timeline: Clear All** — Added a "Clear All" button to the Timeline toolbar. Clears all audit log entries for the current session with a confirmation dialog.
+
+### Fixed
+
+- Removed GIF files from VSIX package to prevent upload timeout on publish. GIFs are now served via GitHub raw URLs in the README.
+- Fixed `package.json` BOM encoding issue that caused publish to fail.
+
+---
+
+## [1.0.0] - 2026-05-10
+
 
 Initial public release.
 

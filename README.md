@@ -1,11 +1,11 @@
-﻿<div align="center">
+<div align="center">
   <img src="./resources/icon.png" alt="DevFlow Suite" width="100" /><br><br>
   <h2>DevFlow Suite</h2>
   <p>A workspace management extension for Visual Studio Code.<br>Task tracking, local file pinning, audit timelines, and a built-in recycle bin. All local, all private.</p>
 
   <a href="https://github.com/webkmsyed/DevFlow-Suite/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
   <a href="https://github.com/webkmsyed/DevFlow-Suite"><img src="https://img.shields.io/badge/open%20source-GitHub-181717?logo=github" alt="GitHub"></a>
-  <a href="https://github.com/webkmsyed/DevFlow-Suite/blob/main/changelog.md"><img src="https://img.shields.io/badge/version-1.0.1-blue" alt="Version"></a>
+  <a href="https://github.com/webkmsyed/DevFlow-Suite/blob/main/changelog.md"><img src="https://img.shields.io/badge/version-1.0.2-blue" alt="Version"></a>
   <br><br>
   A <a href="https://jargoniseasy.com">Jargoniseasy</a> open-source project, built by <a href="https://github.com/webkmsyed">webkmsyed</a>
 </div>
@@ -162,7 +162,7 @@ MIT License. See the [LICENSE](./LICENSE) file for details.
 <br>
 <sub>
   <a href="https://github.com/webkmsyed/DevFlow-Suite">Open Source Repository</a>
-  &nbsp;Â·&nbsp;
+  &nbsp;&middot;&nbsp;
   <a href="https://marketplace.visualstudio.com/items?itemName=jargoniseasy.devflow-suite">VS Code Marketplace</a>
 </sub>
 
