@@ -1,8 +1,8 @@
-{
+﻿{
   "name": "devflow-suite",
   "displayName": "DevFlow Suite",
   "description": "Zero-config VS Code extension for task management, local file snapshots, and audit timelines. 100% local, no backend required.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "jargoniseasy",
   "license": "MIT",
   "icon": "resources/icon.png",

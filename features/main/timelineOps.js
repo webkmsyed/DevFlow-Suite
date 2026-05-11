@@ -1,6 +1,6 @@
-﻿// File: features/main/timelineOps.js
+// File: features/main/timelineOps.js
 const vscode = require('vscode');
-const { toggleLogStar, editLogNote } = require('../engine/logger');
+const { toggleLogStar, editLogNote, clearLogs } = require('../engine/logger');
 
 let currentPanel = null;
 
@@ -52,6 +52,16 @@ function registerTimeline(context) {
             }
             if (msg.command === 'importLogs') {
                 vscode.commands.executeCommand('jargon.importTimeline');
+            }
+            if (msg.command === 'clearAllLogs') {
+                const confirm = await vscode.window.showWarningMessage(
+                    'Clear all timeline logs? This cannot be undone.',
+                    { modal: true }, 'Clear All'
+                );
+                if (confirm === 'Clear All') {
+                    await clearLogs(context);
+                    render();
+                }
             }
         });
 
@@ -376,8 +386,9 @@ function getHTML(logs, savedMode) {
   <button class="btn" onclick="clearDates()">Clear</button>
   <button class="btn" id="starFilterBtn" onclick="toggleStarFilter()">⭐ Starred</button>
   <button class="btn" onclick="vscode.postMessage({command:'refresh'})">↻ Sync</button>
-  <button class="btn" onclick="handleImport()">📥 Import</button>
-  <button class="btn" onclick="handleExport()">💾 Export</button>
+  <button class="btn" onclick="handleImport()">Import</button>
+  <button class="btn" onclick="handleExport()">Export</button>
+  <button class="btn" style="color:#e05c5c" onclick="vscode.postMessage({command:'clearAllLogs'})" title="Clear all timeline logs">Clear All</button>
   <button class="btn mode-btn" id="modeBtn" onclick="toggleMode()" title="Toggle dark/light">${initIcon}</button>
 </div>
 <div class="search-bar">
