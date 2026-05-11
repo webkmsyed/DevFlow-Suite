@@ -10,5 +10,5 @@ liberapay: # Replace with your Liberapay username
 issuehunt: # Replace with your IssueHunt project name
 lfx_crowdfunding: # Replace with your LFX Crowdfunding project name
 polar: # Replace with your Polar username
-buy_me_a_coffee: # Replace with your Buy Me a Coffee username
+buy_me_a_coffee: ["https://buymeacoffee.com/webkmsyed"]# Replace with your Buy Me a Coffee username
 custom: ["https://jargoniseasy.com"] # Replace with up to 4 custom sponsorship URLs
